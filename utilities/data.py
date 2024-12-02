@@ -1,14 +1,15 @@
-"""return lines from file in list minus new line characters"""
+"""Module providing data parsing utilities"""
+
 def read_lines(filename):
+    """return lines from file in list minus new line characters"""
     lines = []
-    with open(filename, "r") as handle:
+    with open(filename, "r", encoding="utf-8") as handle:
         for line in handle:
             lines.append(line.rstrip())
     return lines
 
-"""parse set of integers from line delimited by seperator"""
 def parse_integers(line: str, seperator):
-    """
+    """parse set of integers from line delimited by seperator
     >>> parse_integers("10, 32, 44", ",")
     [10, 32, 44]
     """
@@ -20,9 +21,8 @@ def parse_integers(line: str, seperator):
         values.append(int(s))
     return values
 
-"""parse a grid of integers from the supplied lines"""
 def parse_integer_grid(lines: list):
-    """
+    """parse a grid of integers from the supplied lines
     >>> parse_integer_grid(["1 3 5", "7 9 0", "3 2 6"])
     [[1, 3, 5], [7, 9, 0], [3, 2, 6]]
     """

@@ -1,18 +1,21 @@
+"""utility imports"""
 from utilities.data import read_lines
-from utilities.runner import Runner
+from utilities.runner import runner
 
-@Runner("Day 1", "Part 1")
+@runner("Day 1", "Part 1")
 def solve_part1(lines: list):
+    """part 1 solving function"""
     left, right = digits(lines)
     left.sort()
     right.sort()
     total = 0
-    for i in range(len(left)):
-        total += abs(left[i] - right[i])
+    for i, l in enumerate(left):
+        total += abs(l - right[i])
     return total
 
-@Runner("Day 1", "Part 2")
+@runner("Day 1", "Part 2")
 def solve_part2(lines: list):
+    """part 2 solving function"""
     left, right = digits(lines)
     rightd = {}
     for d in right:
@@ -23,6 +26,7 @@ def solve_part2(lines: list):
     return total
 
 def digits(lines: list):
+    """build set of digit lists from input lines"""
     left = []
     right = []
     for line in lines:
@@ -31,8 +35,8 @@ def digits(lines: list):
         right.append(int(s[1]))
     return left, right
 
-# Part 1
-input = read_lines("input/day01/input.txt")
+# Data
+data = read_lines("input/day01/input.txt")
 sample = [
     "3   4",
     "4   3",
@@ -42,13 +46,10 @@ sample = [
     "3   3",
 ]
 
-value = solve_part1(sample)
-assert(value == 11)
-value = solve_part1(input)
-assert(value == 1530215)
+# Part 1
+assert solve_part1(sample) == 11
+assert solve_part1(data) == 1530215
 
 # Part 2
-value = solve_part2(sample)
-assert(value == 31)
-value = solve_part2(input)
-assert(value == 26800609)
+assert solve_part2(sample) == 31
+assert solve_part2(data) == 26800609

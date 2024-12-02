@@ -1,8 +1,10 @@
+"""utility imports"""
 from utilities.data import read_lines, parse_integers
-from utilities.runner import Runner
+from utilities.runner import runner
 
-@Runner("Day 2", "Part 1")
+@runner("Day 2", "Part 1")
 def solve_part1(lines: list):
+    """part 1 solving function"""
     safe = 0
     for line in lines:
         report = parse_integers(line, " ")
@@ -10,8 +12,9 @@ def solve_part1(lines: list):
             safe += 1
     return safe
 
-@Runner("Day 2", "Part 2")
+@runner("Day 2", "Part 2")
 def solve_part2(lines: list):
+    """part 2 solving function"""
     safe = 0
     for line in lines:
         report = parse_integers(line, " ")
@@ -27,6 +30,7 @@ def solve_part2(lines: list):
     return safe
 
 def safe_report(report: list):
+    """determine if the supplied report is safe"""
     inc = report[1] > report[0]
     for i in range(1,len(report)):
         if not safe_level(inc, report[i-1], report[i]):
@@ -34,6 +38,7 @@ def safe_report(report: list):
     return True
 
 def safe_level(inc: bool, prev: int, current: int):
+    """determine if the current level is safe"""
     if inc and current <= prev:
         return False
     elif not inc and current >= prev:
@@ -42,8 +47,8 @@ def safe_level(inc: bool, prev: int, current: int):
         return False
     return True
 
-# Part 1
-input = read_lines("input/day02/input.txt")
+# Data
+data = read_lines("input/day02/input.txt")
 sample = [
     "7 6 4 2 1",
     "1 2 7 8 9",
@@ -53,13 +58,10 @@ sample = [
     "1 3 6 7 9",
 ]
 
-value = solve_part1(sample)
-assert(value == 2)
-value = solve_part1(input)
-assert(value == 287)
+# Part 1
+assert solve_part1(sample) == 2
+assert solve_part1(data) == 287
 
 # Part 2
-value = solve_part2(sample)
-assert(value == 4)
-value = solve_part2(input)
-assert(value == 354)
+assert solve_part2(sample) == 4
+assert solve_part2(data) == 354
