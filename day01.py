@@ -1,73 +1,54 @@
-import re
-from re import Pattern
 from utilities.data import read_lines
 from utilities.runner import Runner
 
-digit_words = {
-    "one": "1",
-    "two": "2",
-    "three": "3",
-    "four": "4",
-    "five": "5",
-    "six": "6",
-    "seven": "7",
-    "eight": "8",
-    "nine": "9",
-}
-
 @Runner("Day 1", "Part 1")
 def solve_part1(lines: list):
-    regex = re.compile("([0-9])")
+    left, right = digits(lines)
+    left.sort()
+    right.sort()
     total = 0
-    for line in lines:
-        total += calibration(regex, line)
+    for i in range(len(left)):
+        total += abs(left[i] - right[i])
     return total
 
 @Runner("Day 1", "Part 2")
 def solve_part2(lines: list):
-    regex = re.compile("(?=([0-9]|one|two|three|four|five|six|seven|eight|nine))")
+    left, right = digits(lines)
+    rightd = {}
+    for d in right:
+        rightd[d] = rightd.get(d, 0) + 1
     total = 0
-    for line in lines:
-        total += calibration(regex, line)
+    for d in left:
+        total += d * rightd.get(d, 0)
     return total
 
-def calibration(regex: Pattern, line: str):
-    matches = tuple(regex.findall(line))
-    first = digit(matches[0])
-    last = digit(matches[-1])
-    return int(first+last)
-
-def digit(s: str):
-    if s in digit_words:
-        return digit_words[s]
-    return s
+def digits(lines: list):
+    left = []
+    right = []
+    for line in lines:
+        s = line.split("   ")
+        left.append(int(s[0]))
+        right.append(int(s[1]))
+    return left, right
 
 # Part 1
 input = read_lines("input/day01/input.txt")
 sample = [
-    "1abc2",
-    "pqr3stu8vwx",
-    "a1b2c3d4e5f",
-    "treb7uchet",
+    "3   4",
+    "4   3",
+    "2   5",
+    "1   3",
+    "3   9",
+    "3   3",
 ]
 
 value = solve_part1(sample)
-assert(value == 142)
+assert(value == 11)
 value = solve_part1(input)
-assert(value == 54331)
+assert(value == 1530215)
 
 # Part 2
-part2_sample = [
-    "two1nine",
-    "eightwothree",
-    "abcone2threexyz",
-    "xtwone3four",
-    "4nineeightseven2",
-    "zoneight234",
-    "7pqrstsixteen",
-]
-
-value = solve_part2(part2_sample)
-assert(value == 281)
+value = solve_part2(sample)
+assert(value == 31)
 value = solve_part2(input)
-assert(value == 54518)
+assert(value == 26800609)
