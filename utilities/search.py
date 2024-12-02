@@ -42,6 +42,7 @@ class SearchMove:
 
 class Searcher:
     """base search plugin implementation"""
+    # pylint: disable=unused-argument
     def is_goal(self, obj) -> bool:
         """returns True when goal of search is met"""
         return True
