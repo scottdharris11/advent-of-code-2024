@@ -1,4 +1,5 @@
 """utility imports"""
+from typing import Tuple
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -17,7 +18,15 @@ def solve_part1(lines: list):
 @runner("Day 5", "Part 2")
 def solve_part2(lines: list):
     """part 2 solving function"""
-    return 0
+    rule_break = lines.index("")
+    rules = parse_rules(lines[0:rule_break])
+    total = 0
+    for update in lines[rule_break+1:]:
+        uorder = list(map(int, update.split(",")))
+        valid, _ = check_update(rules, uorder)
+        if not valid:
+            total += reorder(rules, uorder)
+    return total
 
 class PageRule:
     """holds before/after rules for a particular page number"""
@@ -41,7 +50,7 @@ def parse_rules(lines: list[str]) -> dict[int,PageRule]:
         rules_by_page[after] = ar
     return rules_by_page
 
-def check_update(rules: dict[int,PageRule], order: list[int]) -> (bool, int):
+def check_update(rules: dict[int,PageRule], order: list[int]) -> Tuple[bool, int]:
     """determine if update is valid and middle number of it if so"""
     for i, page in enumerate(order):
         rule = rules[page]
@@ -52,6 +61,20 @@ def check_update(rules: dict[int,PageRule], order: list[int]) -> (bool, int):
             if a not in rule.after:
                 return (False, 0)
     return (True, order[int(len(order)/2)])
+
+def reorder(rules: dict[int,PageRule], order: list[int]) -> int:
+    """reorder the update so in proper order and return middle"""
+    norder = [order[0]]
+    for page in order[1:]:
+        rule = rules[page]
+        insert_at = 0
+        for i, p in enumerate(norder):
+            insert_at = i
+            if p in rule.before:
+                break
+            insert_at += 1
+        norder.insert(insert_at, page)
+    return norder[int(len(order)/2)]
 
 # Data
 data = read_lines("input/day05/input.txt")
@@ -90,5 +113,5 @@ assert solve_part1(sample) == 143
 assert solve_part1(data) == 5588
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+assert solve_part2(sample) == 123
+assert solve_part2(data) == 5331
