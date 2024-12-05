@@ -68,8 +68,7 @@ def reorder(rules: dict[int,PageRule], order: list[int]) -> int:
     for page in order[1:]:
         rule = rules[page]
         insert_at = 0
-        for i, p in enumerate(norder):
-            insert_at = i
+        for p in norder:
             if p in rule.before:
                 break
             insert_at += 1
