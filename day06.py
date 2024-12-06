@@ -1,5 +1,5 @@
 """utility imports"""
-from typing import Tuple
+from typing import Set, Tuple
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -11,10 +11,13 @@ def solve_part1(grid: list[str]):
     loc = find_guard(grid)
     height = len(grid)
     width = len(grid[0])
+    
+    d = 0
     visited = set()
     visited.add(loc)
-    d = 0
+    visited_in_dir = set()
     while True:
+        visited_in_dir.add(loc + directions[d])
         loc = (loc[0]+directions[d][0],loc[1]+directions[d][1])
         if loc[0] < 0 or loc[0] >= width:
             break
@@ -31,7 +34,31 @@ def solve_part1(grid: list[str]):
 @runner("Day 6", "Part 2")
 def solve_part2(grid: list[str]):
     """part 2 solving function"""
-    return 0
+    loc = find_guard(grid)
+    height = len(grid)
+    width = len(grid[0])
+    
+    d = 0
+    visited = set()
+    visited.add(loc)
+    visited_in_dir = set()
+    loop_points = set()
+    while True:
+        visited_in_dir.add(loc + directions[d])
+        if turn_into_loop(grid, loc, d, visited_in_dir):
+            loop_points += 1
+        loc = (loc[0]+directions[d][0],loc[1]+directions[d][1])
+        if loc[0] < 0 or loc[0] >= width:
+            break
+        if loc[1] < 0 or loc[1] >= height:
+            break
+        if grid[loc[1]][loc[0]] == '#':
+            loc = (loc[0]-directions[d][0],loc[1]-directions[d][1])
+            d += 1
+            if d >= len(directions):
+                d = 0
+        visited.add(loc)
+    return loop_points
 
 def find_guard(grid: list[str]) -> Tuple[int, int]:
     """find position of guard on grid"""
@@ -39,6 +66,26 @@ def find_guard(grid: list[str]) -> Tuple[int, int]:
         for x, col in enumerate(row):
             if col == '^':
                 return ((x, y))
+
+def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set) -> bool:
+    """determine if putting a turn at the path point ahead would trigger loop"""
+    height = len(grid)
+    width = len(grid[0])
+    d += 1
+    if d >= len(directions):
+        d = 0
+    while True:
+        loc = (loc[0]+directions[d][0],loc[1]+directions[d][1])
+        if loc[0] < 0 or loc[0] >= width:
+            break
+        if loc[1] < 0 or loc[1] >= height:
+            break
+        if grid[loc[1]][loc[0]] == '#':
+            break
+        loc_in_dir = loc + directions[d]
+        if loc_in_dir in vid:
+            return True
+    return False
 
 # Data
 data = read_lines("input/day06/input.txt")
@@ -59,5 +106,5 @@ assert solve_part1(sample) == 41
 assert solve_part1(data) == 4656
 
 # Part 2
-assert solve_part2(sample) == 0
+assert solve_part2(sample) == 6
 assert solve_part2(data) == 0
