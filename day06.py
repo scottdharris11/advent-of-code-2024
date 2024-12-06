@@ -37,7 +37,7 @@ def solve_part2(grid: list[str]):
     loc = find_guard(grid)
     height = len(grid)
     width = len(grid[0])
-    
+
     d = 0
     visited = set()
     visited.add(loc)
@@ -45,7 +45,7 @@ def solve_part2(grid: list[str]):
     loop_points = 0
     while True:
         visited_in_dir.add(loc + directions[d])
-        if turn_into_loop(grid, loc, d, visited_in_dir):
+        if turn_into_loop(grid, loc, d, visited_in_dir, visited):
             loop_points += 1
         loc = (loc[0]+directions[d][0],loc[1]+directions[d][1])
         if loc[0] < 0 or loc[0] >= width:
@@ -67,7 +67,7 @@ def find_guard(grid: list[str]) -> Tuple[int, int]:
             if col == '^':
                 return ((x, y))
 
-def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set) -> bool:
+def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set, visited: Set) -> bool:
     """
     determine if putting a turn at the path point ahead would trigger loop
     by checking to see if a path in that direction has already been followed.
@@ -75,13 +75,20 @@ def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set) -> bo
     height = len(grid)
     width = len(grid[0])
     place_point = (loc[0]+directions[d][0],loc[1]+directions[d][1])
+    
+    # outside grid
     if place_point[0] < 0 or place_point[0] >= width:
         return False
     if place_point[1] < 0 or place_point[1] >= height:
         return False
+    # already something there
     if grid[place_point[1]][place_point[0]] in ['#','^']:
         return False
+    # visited on path already so not eligible since it would change the path to get here
+    if place_point in visited:
+        return False
 
+    vid = vid.copy()
     d += 1
     if d >= len(directions):
         d = 0
@@ -92,15 +99,14 @@ def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set) -> bo
         if loc[1] < 0 or loc[1] >= height:
             return False
         if grid[loc[1]][loc[0]] == '#':
-            # check here to see if the turn would put you on an existing path
             loc = (loc[0]-directions[d][0],loc[1]-directions[d][1])
             d += 1
             if d >= len(directions):
                 d = 0
-            return loc + directions[d] in vid
         loc_in_dir = loc + directions[d]
         if loc_in_dir in vid:
             return True
+        vid.add(loc + directions[d])
 
 # Data
 data = read_lines("input/day06/input.txt")
