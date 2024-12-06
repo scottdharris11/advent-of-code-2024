@@ -74,21 +74,33 @@ def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set) -> bo
     """
     height = len(grid)
     width = len(grid[0])
+    place_point = (loc[0]+directions[d][0],loc[1]+directions[d][1])
+    if place_point[0] < 0 or place_point[0] >= width:
+        return False
+    if place_point[1] < 0 or place_point[1] >= height:
+        return False
+    if grid[place_point[1]][place_point[0]] in ['#','^']:
+        return False
+
     d += 1
     if d >= len(directions):
         d = 0
     while True:
         loc = (loc[0]+directions[d][0],loc[1]+directions[d][1])
         if loc[0] < 0 or loc[0] >= width:
-            break
+            return False
         if loc[1] < 0 or loc[1] >= height:
-            break
+            return False
         if grid[loc[1]][loc[0]] == '#':
-            break
+            # check here to see if the turn would put you on an existing path
+            loc = (loc[0]-directions[d][0],loc[1]-directions[d][1])
+            d += 1
+            if d >= len(directions):
+                d = 0
+            return loc + directions[d] in vid
         loc_in_dir = loc + directions[d]
         if loc_in_dir in vid:
             return True
-    return False
 
 # Data
 data = read_lines("input/day06/input.txt")
