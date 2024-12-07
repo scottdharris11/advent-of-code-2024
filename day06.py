@@ -25,24 +25,6 @@ def solve_part1(grid: list[str]):
         visited.add(loc)
     return len(visited)
 
-@runner("Day 6", "Part 2 Brute Force")
-def solve_part2_bf(grid: list[str]):
-    """part 2 solving function"""
-    loc = find_guard(grid)
-    height = len(grid)
-    width = len(grid[0])
-    
-    loop_points = 0
-    for y in range(height):
-        for x in range(width):
-            if grid[y][x] in ['#','^']:
-                continue
-            grid[y] = grid[y][:x] + '#' + grid[y][x+1:]
-            if check_loop(grid, loc):
-                loop_points += 1
-            grid[y] = grid[y][:x] + '.' + grid[y][x+1:]
-    return loop_points
-
 @runner("Day 6", "Part 2")
 def solve_part2(grid: list[str]):
     """part 2 solving function"""
@@ -82,30 +64,6 @@ def turn(current: int) -> int:
         d = 0
     return d
 
-def check_loop(grid: list[str], loc: Tuple[int,int]) -> bool:
-    """
-    determine if putting a turn at the path point ahead would trigger loop
-    by checking to see if a path in that direction has already been followed.
-    """
-    height = len(grid)
-    width = len(grid[0])
-
-    # turn and then process until either getting out (no loop)
-    # or a path already used is entered (indicating loop)
-    d = 0
-    vid = set()
-    while True:
-        loc = tuple(x + y for x, y in zip(loc, directions[d]))
-        if loc[0] < 0 or loc[0] >= width or loc[1] < 0 or loc[1] >= height:
-            return False
-        if grid[loc[1]][loc[0]] == '#':
-            loc = tuple(x - y for x, y in zip(loc, directions[d]))
-            d = turn(d)
-        loc_in_dir = loc + directions[d]
-        if loc_in_dir in vid:
-            return True
-        vid.add(loc_in_dir)
-
 def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set, visited: Set) -> bool:
     """
     determine if putting a turn at the path point ahead would trigger loop
@@ -133,7 +91,7 @@ def turn_into_loop(grid: list[str], loc: Tuple[int,int], d: int, vid: Set, visit
         loc = tuple(x + y for x, y in zip(loc, directions[d]))
         if loc[0] < 0 or loc[0] >= width or loc[1] < 0 or loc[1] >= height:
             return False
-        if grid[loc[1]][loc[0]] == '#':
+        if grid[loc[1]][loc[0]] == '#' or loc == point:
             loc = tuple(x - y for x, y in zip(loc, directions[d]))
             d = turn(d)
         loc_in_dir = loc + directions[d]
@@ -160,8 +118,5 @@ assert solve_part1(sample) == 41
 assert solve_part1(data) == 4656
 
 # Part 2
-assert solve_part2_bf(sample) == 6
-assert solve_part2_bf(data) == 1575
-
 assert solve_part2(sample) == 6
 assert solve_part2(data) == 1575
