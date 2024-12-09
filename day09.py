@@ -19,6 +19,7 @@ def solve_part2(lines: list[str]):
 class File:
     """file definition"""
     def __init__(self, file_id: int, blocks: int) -> None:
+        self.etype = "file"
         self.file_id = file_id
         self.blocks = blocks
 
@@ -28,6 +29,7 @@ class File:
 class FreeSpace:
     """free space definition"""
     def __init__(self, blocks: int) -> None:
+        self.etype = "free"
         self.blocks = blocks
 
     def __repr__(self):
@@ -54,21 +56,21 @@ class DiskMap:
     def last_file_idx(self) -> int:
         """obtain index to last file"""
         for i in range(len(self.entries)-1, 0, -1):
-            if isinstance(self.entries[i], File):
+            if self.entries[i].etype == "file":
                 return i
         return -1
 
     def index_of_file(self, file_id: int) -> int:
         """obtain index to last file"""
         for i in range(len(self.entries)-1, 0, -1):
-            if isinstance(self.entries[i], File) and self.entries[i].file_id == file_id:
+            if self.entries[i].etype == "file" and self.entries[i].file_id == file_id:
                 return i
         return -1
 
     def first_free_idx(self) -> int:
         """obtain index to first free space"""
         for i, e in enumerate(self.entries):
-            if isinstance(e, FreeSpace):
+            if e.etype == "free":
                 return i
         return -1
 
@@ -84,7 +86,7 @@ class DiskMap:
                 self.entries[file_idx] = free
             elif file.blocks < free.blocks:
                 self.entries.insert(free_idx, file)
-                if file_idx + 2 < len(self.entries) and isinstance(self.entries[file_idx+2], FreeSpace):
+                if file_idx + 2 < len(self.entries) and self.entries[file_idx+2].etype == "free":
                     self.entries[file_idx+2].blocks += file.blocks
                     del self.entries[file_idx+1]
                 else:
@@ -93,7 +95,7 @@ class DiskMap:
             else:
                 self.entries[free_idx] = File(file.file_id, free.blocks)
                 file.blocks -= free.blocks
-                if file_idx + 1 < len(self.entries) and isinstance(self.entries[file_idx+1], FreeSpace):
+                if file_idx + 1 < len(self.entries) and self.entries[file_idx+1].etype == "free":
                     self.entries[file_idx+1].blocks += free.blocks
                 else:
                     self.entries.insert(file_idx+1,FreeSpace(free.blocks))
@@ -113,9 +115,9 @@ class DiskMap:
                     self.entries[free_idx] = file
                     self.entries[file_idx] = free
                     break
-                elif file.blocks < free.blocks:
+                if file.blocks < free.blocks:
                     self.entries.insert(free_idx, file)
-                    if file_idx + 2 < len(self.entries) and isinstance(self.entries[file_idx+2], FreeSpace):
+                    if file_idx + 2 < len(self.entries) and self.entries[file_idx+2].etype == "free":
                         self.entries[file_idx+2].blocks += file.blocks
                         del self.entries[file_idx+1]
                     else:
@@ -124,7 +126,7 @@ class DiskMap:
                     break
                 free_idx += 1
                 while free_idx < len(self.entries):
-                    if isinstance(self.entries[free_idx], FreeSpace):
+                    if self.entries[free_idx].etype == "free":
                         break
                     free_idx += 1
 
@@ -133,7 +135,7 @@ class DiskMap:
         chk = 0
         idx = 0
         for e in self.entries:
-            if isinstance(e, FreeSpace):
+            if e.etype == "free":
                 idx += e.blocks
                 continue
             for _ in range(e.blocks):
