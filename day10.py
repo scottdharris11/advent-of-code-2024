@@ -11,23 +11,37 @@ def solve_part1(grid: list[str]):
         for x, col in enumerate(row):
             if col == '0':
                 reached = set()
-                follow_path(grid, (x, y), reached)
+                path = list()
+                path.append((x, y))
+                follow_path(grid, path, reached, list())
                 trails += len(reached)
     return trails
 
 @runner("Day 10", "Part 2")
 def solve_part2(grid: list[str]):
     """part 2 solving function"""
-    return 0
+    trails = 0
+    for y, row in enumerate(grid):
+        for x, col in enumerate(row):
+            if col == '0':
+                paths = list()
+                path = list()
+                path.append((x, y))
+                follow_path(grid, path, set(), paths)
+                trails += len(paths)
+    return trails
 
-def follow_path(grid: list[str], loc: Tuple[int, int], reached: set[int, int]):
+def follow_path(grid: list[str], path: list[Tuple[int, int]], reached: set[int, int], paths: list[list[Tuple[int, int]]]):
     """follow path to discover reached heights using valid moves"""
-    moves = potential_moves(grid, loc)
+    moves = potential_moves(grid, path[-1])
     for move in moves:
+        npath = list(path)
+        npath.append(move)
         if grid[move[1]][move[0]] == '9':
             reached.add(move)
+            paths.append(npath)
         else:
-            follow_path(grid, move, reached)
+            follow_path(grid, npath, reached, paths)
 
 def potential_moves(grid: list[str], loc: Tuple[int, int]) -> list[Tuple[int, int]]:
     """determine potential moves from current location"""
@@ -91,5 +105,29 @@ assert solve_part1(sample5) == 36
 assert solve_part1(data) == 535
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+sample6 = """.....0.
+..4321.
+..5..2.
+..6543.
+..7..4.
+..8765.
+..9....""".splitlines()
+sample7 = """..90..9
+...1.98
+...2..7
+6543456
+765.987
+876....
+987....""".splitlines()
+sample8 = """012345
+123456
+234567
+345678
+4.6789
+56789.""".splitlines()
+
+assert solve_part2(sample6) == 3
+assert solve_part2(sample7) == 13
+assert solve_part2(sample8) == 227
+assert solve_part2(sample5) == 81
+assert solve_part2(data) == 1186
