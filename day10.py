@@ -6,42 +6,44 @@ from utilities.runner import runner
 @runner("Day 10", "Part 1")
 def solve_part1(grid: list[str]):
     """part 1 solving function"""
-    trails = 0
+    count = 0
     for y, row in enumerate(grid):
         for x, col in enumerate(row):
             if col == '0':
-                reached = set()
-                path = list()
+                trails = []
+                path = []
                 path.append((x, y))
-                follow_path(grid, path, reached, list())
-                trails += len(reached)
-    return trails
+                follow_path(grid, path, trails)
+                reached = set()
+                for trail in trails:
+                    reached.add(trail[-1])
+                count += len(reached)
+    return count
 
 @runner("Day 10", "Part 2")
 def solve_part2(grid: list[str]):
     """part 2 solving function"""
-    trails = 0
+    count = 0
     for y, row in enumerate(grid):
         for x, col in enumerate(row):
             if col == '0':
-                paths = list()
-                path = list()
+                trails = []
+                path = []
                 path.append((x, y))
-                follow_path(grid, path, set(), paths)
-                trails += len(paths)
-    return trails
+                follow_path(grid, path, trails)
+                count += len(trails)
+    return count
 
-def follow_path(grid: list[str], path: list[Tuple[int, int]], reached: set[int, int], paths: list[list[Tuple[int, int]]]):
+def follow_path(grid: list[str], path: list[Tuple[int, int]], trails: list[list[Tuple[int, int]]]):
     """follow path to discover reached heights using valid moves"""
     moves = potential_moves(grid, path[-1])
     for move in moves:
         npath = list(path)
         npath.append(move)
         if grid[move[1]][move[0]] == '9':
-            reached.add(move)
-            paths.append(npath)
+            trails.append(npath)
         else:
-            follow_path(grid, npath, reached, paths)
+            follow_path(grid, npath, trails)
 
 def potential_moves(grid: list[str], loc: Tuple[int, int]) -> list[Tuple[int, int]]:
     """determine potential moves from current location"""
