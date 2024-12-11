@@ -1,14 +1,12 @@
 """utility imports"""
+from collections import Counter
 from utilities.data import parse_integers, read_lines
 from utilities.runner import runner
 
 @runner("Day 11", "Part 1")
 def solve_part1(values: list[str], blinks: int):
     """part 1 solving function"""
-    stones = {}
-    for v in values:
-        cnt = stones.get(v, 0)
-        stones[v] = cnt + 1
+    stones = dict(Counter(values))
 
     for _ in range(blinks):
         wstones = {}
