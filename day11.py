@@ -27,10 +27,7 @@ def solve_part1(values: list[str], blinks: int):
                 wstones[n2024] = wstones.get(n2024,0) + count
         stones = wstones
 
-    count = 0
-    for c in stones.values():
-        count += c
-    return count
+    return sum(stones.values())
 
 # Data
 data = parse_integers(read_lines("input/day11/input.txt")[0], " ")
