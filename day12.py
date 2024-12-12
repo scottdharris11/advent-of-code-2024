@@ -5,29 +5,17 @@ from utilities.runner import runner
 @runner("Day 12", "Part 1")
 def solve_part1(grid: list[str]):
     """part 1 solving function"""
-    assigned = set()
     fence_cost = 0
-    for y, row in enumerate(grid):
-        for x, col in enumerate(row):
-            if (x,y) in assigned:
-                continue
-            region = Region(col, (x,y))
-            plant_region(grid, col, (x,y), region.plots, assigned)
-            fence_cost += region.cost(grid)
+    for r in plant_regions(grid):
+        fence_cost += r.cost(grid)
     return fence_cost
 
 @runner("Day 12", "Part 2")
 def solve_part2(grid: list[str]):
     """part 2 solving function"""
-    assigned = set()
     fence_cost = 0
-    for y, row in enumerate(grid):
-        for x, col in enumerate(row):
-            if (x,y) in assigned:
-                continue
-            region = Region(col, (x,y))
-            plant_region(grid, col, (x,y), region.plots, assigned)
-            fence_cost += region.bulk_cost(grid)
+    for r in plant_regions(grid):
+        fence_cost += r.bulk_cost(grid)
     return fence_cost
 
 class Region:
@@ -89,6 +77,18 @@ class Region:
                 edges[k].append(v)
         return edges
 
+def plant_regions(grid: list[str]) -> list[Region]:
+    """identify the distinct plant regions in the grid"""
+    assigned = set()
+    regions = []
+    for y, row in enumerate(grid):
+        for x, col in enumerate(row):
+            if (x,y) in assigned:
+                continue
+            region = Region(col, (x,y))
+            plant_region(grid, col, (x,y), region.plots, assigned)
+            regions.append(region)
+    return regions
 
 def plant_region(grid: list[str], plant: chr, last: tuple[int,int], region: set[tuple[int, int]], prev: set[tuple[int, int]]):
     """follow grid to find connected plants of same type"""
