@@ -18,7 +18,7 @@ def solve_part2(lines: list[str]):
     adjust = 10000000000000
     machines = parse_machines(lines)
     tokens = 0
-    for m in machines:
+    for i, m in enumerate(machines):
         m.constraint = 0
         m.prize = (m.prize[0]+adjust, m.prize[1]+adjust)
         tokens += m.winning_tokens()
@@ -36,26 +36,25 @@ class PrizeMachine:
         return str((self.a_btn, self.b_btn, self.prize))
 
     def winning_tokens(self) -> int:
-        """compute lowest winning token combination with max of 100 each"""
-        max_a = self.__max_press__(self.a_btn)
-        min_tokens = 0
-        for a in range(max_a+1):
-            x = a * self.a_btn[0]
-            y = a * self.a_btn[1]
-            if (self.prize[0] - x) % self.b_btn[0] == 0:
-                b = int((self.prize[0] - x) / self.b_btn[0])
-                if b * self.b_btn[1] + y == self.prize[1]:
-                    tokens = (a * 3) + b
-                    if min_tokens == 0 or tokens < min_tokens:
-                        min_tokens = tokens
-        return min_tokens
+        """compute lowest winning token combination"""
 
-    def __max_press__(self, btn: tuple[int, int]) -> int:
-        """potential max button hits"""
-        m = min(int(self.prize[0]/btn[0]), int(self.prize[1]/btn[1]))
-        if self.constraint > 0 and m > self.constraint:
-            return self.constraint
-        return m
+        # still trying to understand this. but took concept code
+        # from rundavidrun @ reddit post:
+        #
+        # https://www.reddit.com/r/adventofcode/comments/1hd4wda/comment/m1temc7/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+        #a = (c*y2 - d*x2) / (x1*y2 - y1*x2)
+        #b = (d*x1 - c*y1) / (x1*y2 - y1*x2)
+
+        px, py = map(int,self.prize)
+        ax, ay = map(int,self.a_btn)
+        bx, by = map(int,self.b_btn)
+
+        a = (px * by - py * bx) / (ax * by - ay * bx)
+        b = (py * ax - px * ay) / (ax * by - ay * bx)
+
+        if int(a) == a and int(b) == b:
+            return (int(a) * 3) + int(b)
+        return 0
 
 btn_extract = re.compile(r'Button [A|B]: X\+([0-9]+), Y\+([0-9]+)')
 prize_extract = re.compile(r'Prize: X=([0-9]+), Y=([0-9]+)')
@@ -96,5 +95,5 @@ assert solve_part1(sample) == 480
 assert solve_part1(data) == 36838
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+assert solve_part2(sample) == 875318608908
+assert solve_part2(data) == 83029436920891
