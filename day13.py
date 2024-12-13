@@ -15,9 +15,14 @@ def solve_part1(lines: list[str]):
 @runner("Day 13", "Part 2")
 def solve_part2(lines: list[str]):
     """part 2 solving function"""
-    return 0
-
-MAX_COST = (100*3) + 101
+    adjust = 10000000000000
+    machines = parse_machines(lines)
+    tokens = 0
+    for m in machines:
+        m.constraint = 0
+        m.prize = (m.prize[0]+adjust, m.prize[1]+adjust)
+        tokens += m.winning_tokens()
+    return tokens
 
 class PrizeMachine:
     """Claw prize machine"""
@@ -25,23 +30,32 @@ class PrizeMachine:
         self.a_btn = a_btn
         self.b_btn = b_btn
         self.prize = prize
+        self.constraint = 100
 
     def __repr__(self):
         return str((self.a_btn, self.b_btn, self.prize))
 
     def winning_tokens(self) -> int:
         """compute lowest winning token combination with max of 100 each"""
-        min_tokens = MAX_COST
-        for a in range(100):
-            for b in range(100):
+        max_a = self.__max_press__(self.a_btn)
+        max_b = self.__max_press__(self.b_btn)
+        min_tokens = 0
+        for a in range(max_a+1):
+            for b in range(max_b+1):
                 x = a * self.a_btn[0] + b * self.b_btn[0]
                 y = a * self.a_btn[1] + b * self.b_btn[1]
                 if (x, y) == self.prize:
                     tokens = (a * 3) + b
-                    min_tokens = min(tokens, min_tokens)
-        if min_tokens == MAX_COST:
-            min_tokens = 0
+                    if min_tokens == 0 or tokens < min_tokens:
+                        min_tokens = tokens
         return min_tokens
+
+    def __max_press__(self, btn: tuple[int, int]) -> int:
+        """potential max button hits"""
+        m = min(int(self.prize[0]/btn[0]), int(self.prize[1]/btn[1]))
+        if self.constraint > 0 and m > self.constraint:
+            return self.constraint
+        return m
 
 btn_extract = re.compile(r'Button [A|B]: X\+([0-9]+), Y\+([0-9]+)')
 prize_extract = re.compile(r'Prize: X=([0-9]+), Y=([0-9]+)')
