@@ -38,13 +38,13 @@ class PrizeMachine:
     def winning_tokens(self) -> int:
         """compute lowest winning token combination with max of 100 each"""
         max_a = self.__max_press__(self.a_btn)
-        max_b = self.__max_press__(self.b_btn)
         min_tokens = 0
         for a in range(max_a+1):
-            for b in range(max_b+1):
-                x = a * self.a_btn[0] + b * self.b_btn[0]
-                y = a * self.a_btn[1] + b * self.b_btn[1]
-                if (x, y) == self.prize:
+            x = a * self.a_btn[0]
+            y = a * self.a_btn[1]
+            if (self.prize[0] - x) % self.b_btn[0] == 0:
+                b = int((self.prize[0] - x) / self.b_btn[0])
+                if b * self.b_btn[1] + y == self.prize[1]:
                     tokens = (a * 3) + b
                     if min_tokens == 0 or tokens < min_tokens:
                         min_tokens = tokens
