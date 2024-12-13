@@ -18,7 +18,7 @@ def solve_part2(lines: list[str]):
     adjust = 10000000000000
     machines = parse_machines(lines)
     tokens = 0
-    for i, m in enumerate(machines):
+    for m in machines:
         m.constraint = 0
         m.prize = (m.prize[0]+adjust, m.prize[1]+adjust)
         tokens += m.winning_tokens()
