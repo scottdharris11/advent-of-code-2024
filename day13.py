@@ -38,19 +38,70 @@ class PrizeMachine:
     def winning_tokens(self) -> int:
         """compute lowest winning token combination"""
 
-        # still trying to understand this. but took concept code
-        # from rundavidrun @ reddit post:
-        #
+        # took concept code from rundavidrun @reddit post:
         # https://www.reddit.com/r/adventofcode/comments/1hd4wda/comment/m1temc7/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
-        #a = (c*y2 - d*x2) / (x1*y2 - y1*x2)
-        #b = (d*x1 - c*y1) / (x1*y2 - y1*x2)
-
+        #
+        # a = (c*y2 - d*x2) / (x1*y2 - y1*x2)
+        # b = (d*x1 - c*y1) / (x1*y2 - y1*x2)
+        #
+        # youtube video by hyperneutrino helped me (https://www.youtube.com/watch?v=-5J-DAsWuJc) 
+        # understand, but here is my explantion:
+        #
+        # solving for a system of equations essentially:
+        #  (A * Ax) + (B * Bx) = Prize x
+        #  (A * Ay) + (B * By) = Prize y
+        #
+        # we are looking for the intersections of the two lines based on the slope.
+        # the slope in these cases is the Ay/Ax and By/Bx.  doing cross multiplication
+        # you will end up with Ax * By = Ay * Bx.  In these problems, the slopes are
+        # not equal which means the lines will intersect.
+        #
+        # to solve the equations, we will look to isolate a A presses first by multiplying
+        # both equations by By and Bx respectively to help us elimintate B, ending up with:
+        #
+        #  (A * Ax * By) + (B * Bx * By) = (Prize x * By)
+        #  (A * Ay * Bx) + (B * By * Bx) = (Prize y * Bx)
+        #
+        # Now that the B coefficients are the same, we can subtract the equations and
+        # elminating the B pieces since they cancel out:
+        #
+        #  (A * Ax * By) - (A * Ay * Bx) = (Prize x * By) - (Prize y * Bx)
+        #
+        # Grouping the left side results in:
+        #
+        #  A * ((Ax * By) - (Ay * Bx)) = (Prize x * By) - (Prize y * Bx)
+        #
+        # Isolating A ten results in:
+        #
+        #  A = ((Prize x * By) - (Prize y * Bx)) / ((Ax * By) - (Ay * Bx))  <======
+        #
+        # Following a similar path to isolate B by multipling both equations by Ay and Ax
+        # respectively, follows this path:
+        #
+        #  (A * Ax * Ay) + (B * Bx * Ay) = (Prize x * Ay)
+        #  (A * Ay * Ax) + (B * By * Ax) = (Prize y * Ax)
+        #
+        # Subtracting equations:
+        #  (B * Bx * Ay) - (B * By * Ax) = (Prize x * Ay) - (Prize y * Ax)
+        # Grouping:
+        #  B * ((Bx * Ay) - (By * Ax)) = (Prize x * Ay) - (Prize y * Ax)
+        # Isolating B:
+        #  B = ((Prize x * Ay) - (Prize y * Ax)) / ((Bx * Ay) - (By * Ax))  <======
+        #
+        # So using the equations we can calculate the presses for buttons A & B.
+        # After calculation, compare the result to the integer value to ensure the
+        # solution is whole numbers, when the intersection is not on a whole number
+        # then the prize is not obtainable since partial presses are not allowed.
+        #
+        #  A = ((Prize x * By) - (Prize y * Bx)) / ((Ax * By) - (Ay * Bx))
+        #  B = ((Prize x * Ay) - (Prize y * Ax)) / ((Bx * Ay) - (By * Ax))
+        #
         px, py = map(int,self.prize)
         ax, ay = map(int,self.a_btn)
         bx, by = map(int,self.b_btn)
 
         a = (px * by - py * bx) / (ax * by - ay * bx)
-        b = (py * ax - px * ay) / (ax * by - ay * bx)
+        b = (px * ay - py * ax) / (bx * ay - by * ax)
 
         if int(a) == a and int(b) == b:
             return (int(a) * 3) + int(b)
