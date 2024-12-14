@@ -35,20 +35,27 @@ def solve_part2(lines: list[str], size: tuple[int,int]):
     robots = []
     for line in lines:
         robots.append(Robot(line))
-    for i in range(100):
+
+    # move robots, first move with no overlaps display easter egg
+    for i in range(10000):
         locs = set()
+        overlaps = False
         for robot in robots:
             robot.move(size)
+            if robot.loc in locs:
+                overlaps = True
             locs.add(robot.loc)
-        print("Second " + str(i+1))
-        for y in range(size[1]):
-            r = ""
-            for x in range(size[0]):
-                if (x, y) in locs:
-                    r += "1"
-                else:
-                    r += "."
-            print(r)
+        if not overlaps:
+            #print("Second " + str(i+1))
+            #for y in range(size[1]):
+            #    r = ""
+            #    for x in range(size[0]):
+            #        if (x, y) in locs:
+            #            r += "1"
+            #        else:
+            #            r += "."
+            #    print(r)
+            return i+1
     return 0
 
 robot_extract = re.compile(r'p=([0-9]+),([0-9]+) v=([0-9\-]+),([0-9\-]+)')
@@ -97,4 +104,4 @@ assert solve_part1(sample, (11, 7)) == 12
 assert solve_part1(data, (101, 103)) == 230435667
 
 # Part 2
-assert solve_part2(data, (101, 103)) == 0
+assert solve_part2(data, (101, 103)) == 7709
