@@ -15,7 +15,7 @@ def solve_part1(lines: list[str]):
             #print(w)
     return w.gpssum()
 
-@runner("Day 14", "Part 2")
+@runner("Day 15", "Part 2")
 def solve_part2(lines: list[str]):
     """part 2 solving function"""
     s = lines.index("")
