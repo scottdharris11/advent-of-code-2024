@@ -21,9 +21,11 @@ def solve_part2(lines: list[str]):
     s = lines.index("")
     w = DoubleWarehouse(lines[:s])
     #print(w)
+    #mcnt = 0
     for iline in lines[s+1:]:
         for i in iline:
-            #print("Move " + i + ":")
+            #mcnt += 1
+            #print("Move " + str(mcnt) + " ("+ i + "):")
             w.move(i)
             #print(w)
     return w.gpssum()
@@ -142,7 +144,7 @@ class DoubleWarehouse:
         if t in self.walls:
             return
         m = True
-        boxmoves = []
+        boxmoves = set()
         if t in self.lboxes:
             m = self.__canmove__(t, self.__newloc__(t,d), d, boxmoves)
         elif t in self.rboxes:
@@ -185,7 +187,7 @@ class DoubleWarehouse:
             tl2 = self.__newloc__(fl2, d)
             if not self.__canmove__(fl2, tl2, d, boxmoves):
                 return False
-        boxmoves.append((fl, tl))
+        boxmoves.add((fl, tl))
         return True
 
     def gpssum(self) -> int:
@@ -246,4 +248,4 @@ assert solve_part1(data) == 1383666
 # Part 2
 assert solve_part2(sample3) == 618
 assert solve_part2(sample2) == 9021
-assert solve_part2(data) == 0
+assert solve_part2(data) == 1412866
