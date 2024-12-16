@@ -1,7 +1,7 @@
 """utility imports"""
 from utilities.data import read_lines
 from utilities.runner import runner
-from utilities.search import Search, Searcher, SearchMove
+from utilities.search import PriorityQueue, Search, Searcher, SearchMove
 
 @runner("Day 16", "Part 1")
 def solve_part1(lines: list[str]):
@@ -17,7 +17,39 @@ def solve_part1(lines: list[str]):
 @runner("Day 16", "Part 2")
 def solve_part2(lines: list[str]):
     """part 2 solving function"""
-    return 0
+    maze = Maze(lines)
+
+    # start with the best path
+    ps = PathSearcher(maze)
+    s = Search(ps)
+    solution = s.best(SearchMove(0, maze.start))
+    if solution is None:
+        return -1
+
+    # look for alternative paths by putting a wall at the turn points
+    # of the path, and searching for new paths that match the cost
+    alt_runs = PriorityQueue()
+    best_path_cost = solution.cost
+    best_locs = set()
+    workd = solution.path[0].direction
+    for pe in solution.path:
+        best_locs.add(pe.loc)
+        if pe.direction != workd:
+            adjust = move_adusts[pe.direction]
+            wpoint = (pe.loc[0] + adjust[0], pe.loc[1] + adjust[1])
+            walls = set()
+            walls.add(wpoint)
+            alt_runs.queue(frozenset(walls), 1)
+            workd = pe.direction
+    alts_checked = set()
+    skip = set()
+    while not alt_runs.empty():
+        walls = alt_runs.next()
+        if walls in alts_checked:
+            continue
+        alts_checked.add(walls)
+        find_alt_path(maze, best_path_cost, alt_runs, best_locs, walls, skip)
+    return len(best_locs)
 
 EAST = 'E'
 WEST = 'W'
@@ -60,28 +92,10 @@ class Maze:
                     self.start = LocDir((x, y), EAST)
                 elif col == "E":
                     self.goal = (x, y)
-        self.visited = set()
-        self.last = self.start
-
-    def __repr__(self):
-        out = ""
-        for y, row in enumerate(self.grid):
-            rout = ""
-            for x, col in enumerate(row):
-                if col == "." and (x, y) == self.last:
-                    rout += "L"
-                elif col == "." and (x, y) in self.visited:
-                    rout += "V"
-                else:
-                    rout += col
-            out += rout + "\n"
-        return out
+        self.addlt_walls = set()
 
     def is_goal(self, point: tuple[int]) -> bool:
         """determine if the supplied point is the goal"""
-        self.visited.add(point)
-        self.last = point
-        #print(self)
         return point == self.goal
 
     def moves_from(self, current: LocDir) -> list[tuple[LocDir,int]]:
@@ -89,7 +103,7 @@ class Maze:
         possible = []
         adjust = move_adusts[current.direction]
         npoint = (current.loc[0] + adjust[0], current.loc[1] + adjust[1])
-        if not self.grid[npoint[1]][npoint[0]] == "#":
+        if not self.grid[npoint[1]][npoint[0]] == "#" and npoint not in self.addlt_walls:
             possible.append((LocDir(npoint,current.direction),1))
         for rotate in rotations[current.direction]:
             radjust = move_adusts[rotate]
@@ -132,6 +146,32 @@ class PathSearcher(Searcher):
         """determine distance from goal"""
         return self.maze.distance_from_goal(obj)
 
+def find_alt_path(maze: Maze, cost: int, pq: PriorityQueue, best: set, walls: set[tuple[int,int]], skip: set):
+    """attempt to find alternate paths by placing additional walls"""
+    maze.addlt_walls = walls
+    ps = PathSearcher(maze)
+    s = Search(ps)
+    solution = s.best(SearchMove(0, maze.start))
+    if solution is None or solution.cost != cost:
+        for w in walls:
+            skip.add(w)
+        return
+    workd = solution.path[0].direction
+    for pe in solution.path:
+        best.add(pe.loc)
+        if pe.direction != workd:
+            adjust = move_adusts[pe.direction]
+            workd = pe.direction
+            wpoint = (pe.loc[0] + adjust[0], pe.loc[1] + adjust[1])
+            if wpoint in skip:
+                continue
+            nwalls = set()
+            for w in walls:
+                nwalls.add(w)
+            nwalls.add(wpoint)
+            pq.queue(frozenset(nwalls), 1)
+    return
+
 # Data
 data = read_lines("input/day16/input.txt")
 sample = """###############
@@ -173,5 +213,6 @@ assert solve_part1(sample2) == 11048
 assert solve_part1(data) == 90440
 
 # Part 2
-#assert solve_part2(sample) == 0
-#assert solve_part2(data) == 0
+assert solve_part2(sample) == 45
+assert solve_part2(sample2) == 64
+assert solve_part2(data) == 479
