@@ -11,9 +11,7 @@ class PriorityQueue:
 
     def next(self) -> any:
         """dequeue the next value"""
-        n = len(self.items) - 1
-        item = self.items[n]
-        self.items = self.items[:n]
+        item = self.items.pop()
         return item[0]
 
     def queue(self, obj: any, priority: int):
@@ -68,9 +66,10 @@ class Search:
     """search implementation"""
     def __init__(self, searcher: Searcher) -> None:
         self.searcher = searcher
+        self.cost_constraint = 0
 
     # utilize a-star search approach to find the path to the goal
-    # with the lowest cost. 
+    # with the lowest cost.
     def best(self, init: SearchMove) -> SearchSolution:
         """find best path from the initial move"""
         q = PriorityQueue()
@@ -85,11 +84,13 @@ class Search:
                 break
 
             for move in self.searcher.possible_moves(current):
-                nCost = cost[current] + move.cost
-                cCost = cost.get(move.state, -1)
-                if cCost == -1 or nCost < cCost:
-                    cost[move.state] = nCost
-                    priority = nCost + self.searcher.distance_from_goal(move.state)
+                new_cost = cost[current] + move.cost
+                if self.cost_constraint > 0 and new_cost > self.cost_constraint:
+                    continue
+                cur_cost = cost.get(move.state, -1)
+                if cur_cost == -1 or new_cost < cur_cost:
+                    cost[move.state] = new_cost
+                    priority = new_cost + self.searcher.distance_from_goal(move.state)
                     q.queue(move.state, priority)
                     from_state[move.state] = current
 

@@ -17,39 +17,20 @@ def solve_part1(lines: list[str]):
 @runner("Day 16", "Part 2")
 def solve_part2(lines: list[str]):
     """part 2 solving function"""
+    # after finding best path, look for alternative paths by putting
+    # a wall at the turn points of the best path and searching for new
+    # paths that match the cost.  each new alt path, do the same, until
+    # exhausted options. skip walls once we detect that they cause
+    # a suboptimal route.
     maze = Maze(lines)
-
-    # start with the best path
-    ps = PathSearcher(maze)
-    s = Search(ps)
-    solution = s.best(SearchMove(0, maze.start))
-    if solution is None:
-        return -1
-
-    # look for alternative paths by putting a wall at the turn points
-    # of the path, and searching for new paths that match the cost
-    alt_runs = PriorityQueue()
-    best_path_cost = solution.cost
-    best_locs = set()
-    workd = solution.path[0].direction
-    for pe in solution.path:
-        best_locs.add(pe.loc)
-        if pe.direction != workd:
-            adjust = move_adusts[pe.direction]
-            wpoint = (pe.loc[0] + adjust[0], pe.loc[1] + adjust[1])
-            walls = set()
-            walls.add(wpoint)
-            alt_runs.queue(frozenset(walls), 1)
-            workd = pe.direction
-    alts_checked = set()
+    pq = PriorityQueue()
+    best = set()
     skip = set()
-    while not alt_runs.empty():
-        walls = alt_runs.next()
-        if walls in alts_checked:
-            continue
-        alts_checked.add(walls)
-        find_alt_path(maze, best_path_cost, alt_runs, best_locs, walls, skip)
-    return len(best_locs)
+    cost = find_alt_path(maze, 0, pq, best, set(), skip)
+    while not pq.empty():
+        walls = pq.next()
+        find_alt_path(maze, cost, pq, best, walls, skip)
+    return len(best)
 
 EAST = 'E'
 WEST = 'W'
@@ -146,16 +127,26 @@ class PathSearcher(Searcher):
         """determine distance from goal"""
         return self.maze.distance_from_goal(obj)
 
-def find_alt_path(maze: Maze, cost: int, pq: PriorityQueue, best: set, walls: set[tuple[int,int]], skip: set):
+def find_alt_path(maze: Maze, cost: int, pq: PriorityQueue, best: set, walls: set[tuple[int,int]], skip: set) -> int:
     """attempt to find alternate paths by placing additional walls"""
+    # run path search in maze using additional walls from input. if
+    # solution is not aligned with best cost, then flag those walls
+    # to skip in the future.
     maze.addlt_walls = walls
     ps = PathSearcher(maze)
     s = Search(ps)
+    s.cost_constraint = cost
     solution = s.best(SearchMove(0, maze.start))
+    if cost == 0:
+        cost = solution.cost
     if solution is None or solution.cost != cost:
         for w in walls:
             skip.add(w)
         return
+
+    # alternative path found.  add turns detected in the a path
+    # to queue for exploring if additional alt paths would exist
+    # if additional wall was there.
     workd = solution.path[0].direction
     for pe in solution.path:
         best.add(pe.loc)
@@ -170,7 +161,7 @@ def find_alt_path(maze: Maze, cost: int, pq: PriorityQueue, best: set, walls: se
                 nwalls.add(w)
             nwalls.add(wpoint)
             pq.queue(frozenset(nwalls), 1)
-    return
+    return cost
 
 # Data
 data = read_lines("input/day16/input.txt")
