@@ -182,5 +182,5 @@ assert solve_part1(sample) == "4,6,3,5,6,3,5,2,1,0"
 assert solve_part1(data) == "7,3,1,3,6,3,6,0,2"
 
 # Part 2
-#assert solve_part2(sample3) == 117440
+assert solve_part2(sample3) == 117440
 assert solve_part2(data) == 105843716614554
