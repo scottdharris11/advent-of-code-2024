@@ -12,7 +12,7 @@ def solve_part1(lines: list[str]) -> str:
 def solve_part2(lines: list[str]):
     """part 2 solving function"""
     pgm = Program(lines)
-    for adjust in range(0,8,1):
+    for adjust in range(1,8,1):
         a = input_search(pgm, 1, 0, adjust)
         if a > 0:
             return a
