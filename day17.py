@@ -129,6 +129,10 @@ def input_search(pgm: Program, itr: int, prev_a: int, adjust_a: int) -> int:
             break
         oi = pgm.run_instruction(oi, oi+1)
     if pgm.output[0] == pgm.opcodes[len(pgm.opcodes)-itr]:
+        # handle case where we got the right output but "a"
+        # also went to zero which would stop program prematurely
+        if pgm.a == 0 and itr != 1:
+            return -1
         if itr == len(pgm.opcodes):
             return start_a
         for adjust in range(0, 8, 1):
