@@ -4,7 +4,7 @@ from utilities.runner import runner
 from utilities.search import Search, Searcher, SearchMove
 
 @runner("Day 18", "Part 1")
-def solve_part1(coords: list[str], size: int, byte_count: int):
+def solve_part1(coords: list[str], size: int, byte_count: int) -> int:
     """part 1 solving function"""
     maze = Memory(coords, size, byte_count)
     ps = PathSearcher(maze)
@@ -15,9 +15,16 @@ def solve_part1(coords: list[str], size: int, byte_count: int):
     return solution.cost
 
 @runner("Day 18", "Part 2")
-def solve_part2(lines: list[str]):
+def solve_part2(coords: list[str], size: int, byte_count: int) -> str:
     """part 2 solving function"""
-    return 0
+    for cnt in range(byte_count+1,len(coords)):
+        maze = Memory(coords, size, cnt)
+        ps = PathSearcher(maze)
+        s = Search(ps)
+        solution = s.best(SearchMove(0, (0,0)))
+        if solution is None:
+            return coords[cnt-1]
+    return "none"
 
 move_adusts = [(1,0), (-1,0), (0,1), (0,-1)]
 
@@ -104,5 +111,5 @@ assert solve_part1(sample, 7, 12) == 22
 assert solve_part1(data, 71, 1024) == 334
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+assert solve_part2(sample, 7, 12) == "6,1"
+assert solve_part2(data, 71, 1024) == "20,12"
