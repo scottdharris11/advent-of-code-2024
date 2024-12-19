@@ -36,8 +36,8 @@ def memoize_possible(f):
 def possible(design: str, patterns: dict[int,set[str]], max_pattern: int) -> bool:
     """recursive function to determine if design is possible given patterns"""
     dl = len(design)
-    m = max(max_pattern,dl)
-    for l in range(1, m+1, 1):
+    m = min(max_pattern,dl)
+    for l in range(m, 0, -1):
         pbl = patterns.get(l, None)
         if pbl is None:
             continue
@@ -62,9 +62,9 @@ def memoize_arrangements(f):
 def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) -> int:
     """recursive function to determine if design is possible given patterns"""
     dl = len(design)
-    m = max(max_pattern,dl)
+    m = min(max_pattern,dl)
     arranges = 0
-    for l in range(1, m+1, 1):
+    for l in range(m, 0, -1):
         pbl = patterns.get(l, None)
         if pbl is None:
             continue
