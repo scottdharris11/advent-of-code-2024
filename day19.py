@@ -106,10 +106,10 @@ bbrgwb""".splitlines()
 
 # Part 1
 assert solve_part1(sample) == 6
-possible.memo.clear()
+possible.memo.clear() # need to clear this cache between sample and real data
 assert solve_part1(data) == 287
 
 # Part 2
 assert solve_part2(sample) == 16
-arrangements.memo.clear()
+arrangements.memo.clear()  # need to clear this cache between sample and real data
 assert solve_part2(data) == 571894474468161
