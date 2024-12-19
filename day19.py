@@ -26,10 +26,10 @@ def solve_part2(lines: list[str]) -> int:
 def memoize_possible(f):
     """function to remember function call results for possible"""
     memo = {}
-    def helper(m: str, p, mp):
-        if (m) not in memo:
-            memo[m] = f(m, p, mp)
-        return memo[m]
+    def helper(d: str, p, mp):
+        if (d) not in memo:
+            memo[d] = f(d, p, mp)
+        return memo[d]
     return helper
 
 @memoize_possible
@@ -52,15 +52,15 @@ def possible(design: str, patterns: dict[int,set[str]], max_pattern: int) -> boo
 def memoize_arrangements(f):
     """function to remember function call results for arrangements"""
     memo = {}
-    def helper(m: str, p, mp):
-        if (m) not in memo:
-            memo[m] = f(m, p, mp)
-        return memo[m]
+    def helper(d: str, p, mp):
+        if (d) not in memo:
+            memo[d] = f(d, p, mp)
+        return memo[d]
     return helper
 
 @memoize_arrangements
 def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) -> int:
-    """recursive function to determine if design is possible given patterns"""
+    """recursive function to count possible arrangements for a supplied design"""
     dl = len(design)
     m = min(max_pattern,dl)
     arranges = 0
