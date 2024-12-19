@@ -1,4 +1,5 @@
 """utility imports"""
+import functools
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -25,7 +26,8 @@ def solve_part2(lines: list[str]) -> int:
 
 def memoize_possible(f):
     """function to remember function call results for possible"""
-    memo = {}
+    memo = f.memo = {}
+    @functools.wraps(f)
     def helper(d: str, p, mp):
         if (d) not in memo:
             memo[d] = f(d, p, mp)
@@ -51,7 +53,8 @@ def possible(design: str, patterns: dict[int,set[str]], max_pattern: int) -> boo
 
 def memoize_arrangements(f):
     """function to remember function call results for arrangements"""
-    memo = {}
+    memo = f.memo = {}
+    @functools.wraps(f)
     def helper(d: str, p, mp):
         if (d) not in memo:
             memo[d] = f(d, p, mp)
@@ -103,8 +106,10 @@ bbrgwb""".splitlines()
 
 # Part 1
 assert solve_part1(sample) == 6
+possible.memo.clear()
 assert solve_part1(data) == 287
 
 # Part 2
 assert solve_part2(sample) == 16
-assert solve_part2(data) > 545103755682737
+arrangements.memo.clear()
+assert solve_part2(data) == 571894474468161
