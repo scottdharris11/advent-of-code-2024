@@ -5,22 +5,22 @@ from utilities.runner import runner
 @runner("Day 19", "Part 1")
 def solve_part1(lines: list[str]) -> int:
     """part 1 solving function"""
-    patterns_by_len, max_pattern_len = parse_patterns(lines[0])
+    patterns, max_pattern = parse_patterns(lines[0])
     designs = lines[2:]
     valid = 0
     for design in designs:
-        if possible(design, patterns_by_len, max_pattern_len):
+        if possible(design, patterns, max_pattern):
             valid += 1
     return valid
 
 @runner("Day 19", "Part 2")
 def solve_part2(lines: list[str]) -> int:
     """part 2 solving function"""
-    patterns_by_len, max_pattern_len = parse_patterns(lines[0])
+    patterns, max_pattern = parse_patterns(lines[0])
     designs = lines[2:]
     total = 0
     for design in designs:
-        total += arrangements(design, patterns_by_len, max_pattern_len)
+        total += arrangements(design, patterns, max_pattern)
     return total
 
 def memoize_possible(f):
