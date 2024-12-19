@@ -20,11 +20,7 @@ def solve_part2(lines: list[str]) -> int:
     designs = lines[2:]
     total = 0
     for design in designs:
-        print(design)
-        arranges = arrangements(design, patterns_by_len, max_pattern_len)
-        #for a in arranges:
-            #print(a)
-        total += len(arranges)
+        total += arrangements(design, patterns_by_len, max_pattern_len)
     return total
 
 def memoize_possible(f):
@@ -63,11 +59,11 @@ def memoize_arrangements(f):
     return helper
 
 @memoize_arrangements
-def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) -> list[list[str]]:
+def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) -> int:
     """recursive function to determine if design is possible given patterns"""
     dl = len(design)
     m = max(max_pattern,dl)
-    arranges = []
+    arranges = 0
     for l in range(1, m+1, 1):
         pbl = patterns.get(l, None)
         if pbl is None:
@@ -75,13 +71,9 @@ def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) ->
         dpc = design[:l]
         if dpc in pbl:
             if l == dl:
-                arranges.append([dpc])
-                continue
-            prev = arrangements(design[l:], patterns, max_pattern)
-            for a in prev:
-                na = list(a)
-                na.append(dpc)
-                arranges.append(na)
+                arranges += 1
+            else:
+                arranges += arrangements(design[l:], patterns, max_pattern)
     return arranges
 
 def parse_patterns(line: str) -> tuple[dict[int,set[str]], int]:
@@ -115,4 +107,4 @@ assert solve_part1(data) == 287
 
 # Part 2
 assert solve_part2(sample) == 16
-assert solve_part2(data) == 0
+assert solve_part2(data) > 545103755682737
