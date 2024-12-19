@@ -5,15 +5,7 @@ from utilities.runner import runner
 @runner("Day 19", "Part 1")
 def solve_part1(lines: list[str]) -> int:
     """part 1 solving function"""
-    patterns_by_len = {}
-    max_pattern_len = 0
-    for pattern in lines[0].split(", "):
-        l = len(pattern)
-        pbl = patterns_by_len.get(l, set())
-        pbl.add(pattern)
-        patterns_by_len[l] = pbl
-        if l > max_pattern_len:
-            max_pattern_len = l
+    patterns_by_len, max_pattern_len = parse_patterns(lines[0])
     designs = lines[2:]
     valid = 0
     for design in designs:
@@ -24,33 +16,85 @@ def solve_part1(lines: list[str]) -> int:
 @runner("Day 19", "Part 2")
 def solve_part2(lines: list[str]) -> int:
     """part 2 solving function"""
-    return 0
+    patterns_by_len, max_pattern_len = parse_patterns(lines[0])
+    designs = lines[2:]
+    total = 0
+    for design in designs:
+        print(design)
+        arranges = arrangements(design, patterns_by_len, max_pattern_len)
+        #for a in arranges:
+            #print(a)
+        total += len(arranges)
+    return total
 
-def memoize(f):
+def memoize_possible(f):
+    """function to remember function call results for possible"""
     memo = {}
-    def helper(m: str, p: list[int], d: int):
-        t = tuple(p)
-        if (m, t, d) not in memo:            
-            memo[(m, t, d)] = f(m, p, d)
-        return memo[(m, t, d)]
+    def helper(m: str, p, mp):
+        if (m) not in memo:
+            memo[m] = f(m, p, mp)
+        return memo[m]
     return helper
 
-@memoize
-def possible(design: str, patterns_by_len: dict[int,set[str]], max_len: int) -> bool:
+@memoize_possible
+def possible(design: str, patterns: dict[int,set[str]], max_pattern: int) -> bool:
     """recursive function to determine if design is possible given patterns"""
     dl = len(design)
-    m = max(max_len,dl)
+    m = max(max_pattern,dl)
     for l in range(1, m+1, 1):
-        pbl = patterns_by_len.get(l, None)
+        pbl = patterns.get(l, None)
         if pbl is None:
             continue
         dpc = design[:l]
         if dpc in pbl:
             if l == dl:
                 return True
-            if possible(design[l:], patterns_by_len, max_len):
+            if possible(design[l:], patterns, max_pattern):
                 return True
     return False
+
+def memoize_arrangements(f):
+    """function to remember function call results for arrangements"""
+    memo = {}
+    def helper(m: str, p, mp):
+        if (m) not in memo:
+            memo[m] = f(m, p, mp)
+        return memo[m]
+    return helper
+
+@memoize_arrangements
+def arrangements(design: str, patterns: dict[int,set[str]], max_pattern: int) -> list[list[str]]:
+    """recursive function to determine if design is possible given patterns"""
+    dl = len(design)
+    m = max(max_pattern,dl)
+    arranges = []
+    for l in range(1, m+1, 1):
+        pbl = patterns.get(l, None)
+        if pbl is None:
+            continue
+        dpc = design[:l]
+        if dpc in pbl:
+            if l == dl:
+                arranges.append([dpc])
+                continue
+            prev = arrangements(design[l:], patterns, max_pattern)
+            for a in prev:
+                na = list(a)
+                na.append(dpc)
+                arranges.append(na)
+    return arranges
+
+def parse_patterns(line: str) -> tuple[dict[int,set[str]], int]:
+    """parse set of patterns from input"""
+    patterns = {}
+    max_len = 0
+    for pattern in line.split(", "):
+        l = len(pattern)
+        pbl = patterns.get(l, set())
+        pbl.add(pattern)
+        patterns[l] = pbl
+        max_len = max(max_len, l)
+    return patterns, max_len
 
 # Data
 data = read_lines("input/day19/input.txt")
@@ -70,5 +114,5 @@ assert solve_part1(sample) == 6
 assert solve_part1(data) == 287
 
 # Part 2
-assert solve_part2(sample) == 0
+assert solve_part2(sample) == 16
 assert solve_part2(data) == 0
