@@ -1,5 +1,4 @@
 """utility imports"""
-import functools
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -40,7 +39,7 @@ def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
 move_adjusts = [(1,0), (-1,0), (0,1), (0,-1)]
 
 class Race:
-    """Memory definition"""
+    """Race definition"""
     def __init__(self, grid: list[str]) -> None:
         self.height = len(grid)
         self.width = len(grid[0])
@@ -72,27 +71,21 @@ class Race:
                 break
         return path
 
-    @functools.cache
     def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
-        """determine potential cheat moves from current location in recursive fashion"""
-        costs = {}
-        for move in move_adjusts:
-            p = (c[0] + move[0], c[1] + move[1])
-            if p[0] < 0 or p[0] >= self.width or p[1] < 0 or p[1] >= self.height:
-                continue
-            if p not in self.walls:
-                costs[p] = 1
-            if steps > 1:
-                addlt_moves = self.cheat_moves(p, steps-1)
-                for m in addlt_moves:
-                    mp = m[0]
-                    mc = m[1] + 1
-                    cc = costs.get(mp,-1)
-                    if cc == -1 or mc < cc:
-                        costs[mp] = mc
+        """compute the possible cheat moves from current location"""
         possible = set()
-        for l, cost in costs.items():
-            possible.add((l, cost))
+        ymin = max(c[1]-steps, 0)
+        ymax = min(c[1]+steps, self.height-1)
+        for y in range(ymin, ymax+1):
+            xsteps = steps - abs(c[1]-y)
+            xmin = max(c[0]-xsteps, 0)
+            xmax = min(c[0]+xsteps, self.width-1)
+            for x in range(xmin, xmax+1):
+                p = (x, y)
+                if (x, y) in self.walls or p == c:
+                    continue
+                cost = abs(c[0] - p[0]) + abs(c[1] - p[1])
+                possible.add((p, cost))
         return possible
 
 # Data
