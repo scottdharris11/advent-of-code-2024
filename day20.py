@@ -2,7 +2,6 @@
 import functools
 from utilities.data import read_lines
 from utilities.runner import runner
-from utilities.search import Search, Searcher, SearchMove
 
 @runner("Day 20", "Part 1")
 def solve_part1(lines: list[str], min_save: int) -> int:
@@ -17,14 +16,11 @@ def solve_part2(lines: list[str], min_save: int) -> int:
 def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
     """find the number of cheats with the minimum supplied savings"""
     race = Race(lines)
-    s = Search(PathSearcher(race))
-    solution = s.best(SearchMove(0, race.start))
-    if solution is None:
-        return -1
+    path = race.path()
     visited = set()
     cheat_paths = 0
     #cheat_cnts_by_savings = {}
-    for i, loc in enumerate(solution.path):
+    for i, loc in enumerate(path):
         #print("Evaluating cheats from path index: " + str(i+1) + " of " + str(len(solution.path)))
         visited.add(loc)
         cheats = race.cheat_moves(loc, cheat_steps)
@@ -32,7 +28,7 @@ def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
             move, cost = cheat[0], cheat[1]
             if move in visited:
                 continue
-            ci = solution.path.index(move, i+1)
+            ci = path.index(move, i+1)
             save = ci - i - cost
             #print("F: " + str(loc) + ", T: " + str(solution.path[ci]) + ", S: " + str(save))
             if save >= min_save:
@@ -41,7 +37,7 @@ def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
     #print(cheat_cnts_by_savings)
     return cheat_paths
 
-move_adusts = [(1,0), (-1,0), (0,1), (0,-1)]
+move_adjusts = [(1,0), (-1,0), (0,1), (0,-1)]
 
 class Race:
     """Memory definition"""
@@ -60,16 +56,28 @@ class Race:
                 elif col == 'E':
                     self.goal = (x, y)
 
-    def is_goal(self, point: tuple[int, int]) -> bool:
-        """determine if the supplied point is the goal"""
-        return point == self.goal
+    def path(self) -> list[tuple[int,int]]:
+        """determine the path of the race"""
+        path = [self.start]
+        loc = self.start
+        prev = None
+        while loc != self.goal:
+            for move in move_adjusts:
+                p = (loc[0] + move[0], loc[1] + move[1])
+                if p in self.walls or p == prev:
+                    continue
+                path.append(p)
+                prev = loc
+                loc = p
+                break
+        return path
 
     @functools.cache
     def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
         """determine potential cheat moves from current location in recursive fashion"""
         locs = set()
         costs = {}
-        for move in move_adusts:
+        for move in move_adjusts:
             p = (c[0] + move[0], c[1] + move[1])
             if p[0] < 0 or p[0] >= self.width or p[1] < 0 or p[1] >= self.height:
                 continue
@@ -89,42 +97,6 @@ class Race:
         for l in locs:
             possible.add((l, costs.get(l)))
         return possible
-
-    def moves_from(self, current: tuple[int,int]) -> list[tuple[int,int]]:
-        """determine possible moves from curent location"""
-        possible = []
-        for move in move_adusts:
-            point = (current[0] + move[0], current[1] + move[1])
-            if point[0] < 0 or point[0] >= self.width or point[1] < 0 or point[1] >= self.height:
-                continue
-            if point in self.walls:
-                continue
-            possible.append(point)
-        return possible
-
-    def distance_from_goal(self, current: tuple[int,int]) -> int:
-        """calculate distance from the goal"""
-        return (abs(current[0] - self.goal[0]) + abs(current[1] - self.goal[1]))
-
-class PathSearcher(Searcher):
-    """path search implementation for the memory"""
-    def __init__(self, race: Race) -> None:
-        self.race = race
-
-    def is_goal(self, obj: tuple[int,int]) -> bool:
-        """determine if search has reached its goal"""
-        return self.race.is_goal(obj)
-
-    def possible_moves(self, obj: tuple[int,int]) -> list[SearchMove]:
-        """determine possible moves from current location"""
-        possible = []
-        for move in self.race.moves_from(obj):
-            possible.append(SearchMove(1, move))
-        return possible
-
-    def distance_from_goal(self, obj: tuple[int,int]) -> int:
-        """determine distance from goal"""
-        return self.race.distance_from_goal(obj)
 
 # Data
 data = read_lines("input/day20/input.txt")
