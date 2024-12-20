@@ -55,7 +55,7 @@ class Searcher:
 
 class SearchSolution:
     """represents the shortest path and cost found"""
-    def __init__(self, cost: int, path) -> None:
+    def __init__(self, cost: int, path: list) -> None:
         self.cost = cost
         self.path = path
 
