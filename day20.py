@@ -20,23 +20,19 @@ def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
     cheat_paths = 0
     #cheat_cnts_by_savings = {}
     for i, loc in enumerate(path):
-        #print("Evaluating cheats from path index: " + str(i+1) + " of " + str(len(solution.path)))
+        #print("Evaluating cheats from path index: " + str(i+1) + " of " + str(len(path)))
         visited.add(loc)
-        cheats = race.cheat_moves(loc, cheat_steps)
+        cheats = race.cheat_moves(loc, cheat_steps, visited)
         for cheat in cheats:
             move, cost = cheat[0], cheat[1]
-            if move in visited:
-                continue
             ci = index[move]
             save = ci - i - cost
-            #print("F: " + str(loc) + ", T: " + str(solution.path[ci]) + ", S: " + str(save))
+            #print("F: " + str(loc) + ", T: " + str(path[ci]) + ", S: " + str(save))
             if save >= min_save:
                 #cheat_cnts_by_savings[save] = cheat_cnts_by_savings.get(save,0) + 1
                 cheat_paths += 1
     #print(cheat_cnts_by_savings)
     return cheat_paths
-
-move_adjusts = [(1,0), (-1,0), (0,1), (0,-1)]
 
 class Race:
     """Race definition"""
@@ -63,7 +59,7 @@ class Race:
         loc = self.start
         prev = None
         while loc != self.goal:
-            for move in move_adjusts:
+            for move in [(1,0), (-1,0), (0,1), (0,-1)]:
                 p = (loc[0] + move[0], loc[1] + move[1])
                 if p in self.walls or p == prev:
                     continue
@@ -75,7 +71,7 @@ class Race:
                 break
         return path, index
 
-    def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
+    def cheat_moves(self, c: tuple[int,int], steps: int, v: set) -> set[tuple[tuple[int,int],int]]:
         """compute the possible cheat moves from current location"""
         possible = set()
         ymin = max(c[1]-steps, 0)
@@ -86,7 +82,7 @@ class Race:
             xmax = min(c[0]+xsteps, self.width-1)
             for x in range(xmin, xmax+1):
                 p = (x, y)
-                if (x, y) in self.walls or p == c:
+                if p == c or p in self.walls or p in v:
                     continue
                 cost = abs(c[0] - p[0]) + abs(c[1] - p[1])
                 possible.add((p, cost))
