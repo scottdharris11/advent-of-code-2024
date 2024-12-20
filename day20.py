@@ -1,4 +1,5 @@
 """utility imports"""
+import functools
 from utilities.data import read_lines
 from utilities.runner import runner
 from utilities.search import Search, Searcher, SearchMove
@@ -6,29 +7,39 @@ from utilities.search import Search, Searcher, SearchMove
 @runner("Day 20", "Part 1")
 def solve_part1(lines: list[str], min_save: int) -> int:
     """part 1 solving function"""
+    return cheat_count(lines, min_save, 2)
+
+@runner("Day 20", "Part 2")
+def solve_part2(lines: list[str], min_save: int) -> int:
+    """part 2 solving function"""
+    return cheat_count(lines, min_save, 20)
+
+def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
+    """find the number of cheats with the minimum supplied savings"""
     race = Race(lines)
-    ps = PathSearcher(race)
-    s = Search(ps)
+    s = Search(PathSearcher(race))
     solution = s.best(SearchMove(0, race.start))
     if solution is None:
         return -1
     visited = set()
     cheat_paths = 0
+    #cheat_cnts_by_savings = {}
     for i, loc in enumerate(solution.path):
-        cheats = race.cheat_moves_from(loc, visited)
+        #print("Evaluating cheats from path index: " + str(i+1) + " of " + str(len(solution.path)))
+        visited.add(loc)
+        cheats = race.cheat_moves(loc, cheat_steps)
         for cheat in cheats:
-            ci = solution.path.index(cheat, i+1)
-            save = ci - i - 2
+            move, cost = cheat[0], cheat[1]
+            if move in visited:
+                continue
+            ci = solution.path.index(move, i+1)
+            save = ci - i - cost
             #print("F: " + str(loc) + ", T: " + str(solution.path[ci]) + ", S: " + str(save))
             if save >= min_save:
+                #cheat_cnts_by_savings[save] = cheat_cnts_by_savings.get(save,0) + 1
                 cheat_paths += 1
-        visited.add(loc)
+    #print(cheat_cnts_by_savings)
     return cheat_paths
-
-@runner("Day 20", "Part 2")
-def solve_part2(lines: list[str]) -> int:
-    """part 2 solving function"""
-    return 0
 
 move_adusts = [(1,0), (-1,0), (0,1), (0,-1)]
 
@@ -53,21 +64,30 @@ class Race:
         """determine if the supplied point is the goal"""
         return point == self.goal
 
-    def cheat_moves_from(self, c: tuple[int,int], v: set[tuple[int,int]]) -> list[tuple[int,int]]:
-        """determine cheat points from current location"""
-        possible = []
+    @functools.cache
+    def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
+        """determine potential cheat moves from current location in recursive fashion"""
+        locs = set()
+        costs = {}
         for move in move_adusts:
             p = (c[0] + move[0], c[1] + move[1])
-            if p not in self.walls:
-                continue
-            p = (p[0] + move[0], p[1] + move[1])
-            if p in self.walls:
-                continue
             if p[0] < 0 or p[0] >= self.width or p[1] < 0 or p[1] >= self.height:
                 continue
-            if p in v:
-                continue
-            possible.append(p)
+            if p not in self.walls:
+                locs.add(p)
+                costs[p] = 1
+            if steps > 1:
+                addlt_moves = self.cheat_moves(p, steps-1)
+                for m in addlt_moves:
+                    mp = m[0]
+                    mc = m[1] + 1
+                    locs.add(mp)
+                    cc = costs.get(mp,-1)
+                    if cc == -1 or mc < cc:
+                        costs[mp] = mc
+        possible = set()
+        for l in locs:
+            possible.add((l, costs.get(l)))
         return possible
 
     def moves_from(self, current: tuple[int,int]) -> list[tuple[int,int]]:
@@ -129,5 +149,5 @@ assert solve_part1(sample, 2) == 44
 assert solve_part1(data, 100) == 1441
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+assert solve_part2(sample, 50) == 285
+assert solve_part2(data, 100) == 1021490
