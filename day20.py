@@ -15,7 +15,7 @@ def solve_part2(lines: list[str], min_save: int) -> int:
 def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
     """find the number of cheats with the minimum supplied savings"""
     race = Race(lines)
-    path = race.path()
+    path, index = race.path()
     visited = set()
     cheat_paths = 0
     #cheat_cnts_by_savings = {}
@@ -27,7 +27,7 @@ def cheat_count(lines: list[str], min_save: int, cheat_steps: int) -> int:
             move, cost = cheat[0], cheat[1]
             if move in visited:
                 continue
-            ci = path.index(move, i+1)
+            ci = index[move]
             save = ci - i - cost
             #print("F: " + str(loc) + ", T: " + str(solution.path[ci]) + ", S: " + str(save))
             if save >= min_save:
@@ -55,9 +55,11 @@ class Race:
                 elif col == 'E':
                     self.goal = (x, y)
 
-    def path(self) -> list[tuple[int,int]]:
-        """determine the path of the race"""
+    def path(self) -> tuple[list[tuple[int,int]],dict[tuple[int,int],int]]:
+        """determine the path of the race and index it for faster lookups"""
         path = [self.start]
+        index = {self.start: 0}
+        idx = 1
         loc = self.start
         prev = None
         while loc != self.goal:
@@ -66,10 +68,12 @@ class Race:
                 if p in self.walls or p == prev:
                     continue
                 path.append(p)
+                index[p] = idx
+                idx += 1
                 prev = loc
                 loc = p
                 break
-        return path
+        return path, index
 
     def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
         """compute the possible cheat moves from current location"""
