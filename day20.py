@@ -73,7 +73,7 @@ class Race:
 
     def cheat_moves(self, c: tuple[int,int], steps: int, v: set) -> set[tuple[tuple[int,int],int]]:
         """compute the possible cheat moves from current location"""
-        possible = set()
+        possible = []
         ymin = max(c[1]-steps, 0)
         ymax = min(c[1]+steps, self.height-1)
         for y in range(ymin, ymax+1):
@@ -85,7 +85,7 @@ class Race:
                 if p == c or p in self.walls or p in v:
                     continue
                 cost = abs(c[0] - p[0]) + abs(c[1] - p[1])
-                possible.add((p, cost))
+                possible.append((p, cost))
         return possible
 
 # Data
