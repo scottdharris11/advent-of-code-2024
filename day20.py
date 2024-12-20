@@ -75,27 +75,24 @@ class Race:
     @functools.cache
     def cheat_moves(self, c: tuple[int,int], steps: int) -> set[tuple[tuple[int,int],int]]:
         """determine potential cheat moves from current location in recursive fashion"""
-        locs = set()
         costs = {}
         for move in move_adjusts:
             p = (c[0] + move[0], c[1] + move[1])
             if p[0] < 0 or p[0] >= self.width or p[1] < 0 or p[1] >= self.height:
                 continue
             if p not in self.walls:
-                locs.add(p)
                 costs[p] = 1
             if steps > 1:
                 addlt_moves = self.cheat_moves(p, steps-1)
                 for m in addlt_moves:
                     mp = m[0]
                     mc = m[1] + 1
-                    locs.add(mp)
                     cc = costs.get(mp,-1)
                     if cc == -1 or mc < cc:
                         costs[mp] = mc
         possible = set()
-        for l in locs:
-            possible.add((l, costs.get(l)))
+        for l, cost in costs.items():
+            possible.add((l, cost))
         return possible
 
 # Data
