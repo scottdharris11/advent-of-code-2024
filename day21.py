@@ -1,11 +1,12 @@
 """utility imports"""
+import functools
 from utilities.data import read_lines
 from utilities.runner import runner
 
 @runner("Day 21", "Part 1")
 def solve_part1(lines: list[str]) -> int:
     """part 1 solving function"""
-    return 0
+    return complexity_total(lines, [dkp, dkp, nkp])
 
 @runner("Day 21", "Part 2")
 def solve_part2(lines: list[str]) -> int:
@@ -29,7 +30,8 @@ class KeyPad:
                 elif col == 'A':
                     self.a_key = (x,y)
 
-    def sequence_paths(self, keyseq: str) -> list[list[chr]]:
+    @functools.cache
+    def sequence_paths(self, keyseq: str) -> list[str]:
         """determine a move path to press the supplied sequence"""
         paths = [""]
         loc = self.a_key
@@ -48,7 +50,8 @@ class KeyPad:
             loc = kloc
         return paths
 
-    def key_paths(self, cur: tuple[int,int], goal: tuple[int,int]) -> list[list[chr]]:
+    @functools.cache
+    def key_paths(self, cur: tuple[int,int], goal: tuple[int,int]) -> list[str]:
         """determine set of path moves that will get from current location to goal"""
         if cur == goal:
             return None
@@ -83,20 +86,52 @@ class KeyPad:
                     return (x,y)
         return None
 
-# Numeric Path Tests
-kp = KeyPad(NUMERIC_LAYOUT)
-assert kp.a_key == (2,3)
-assert kp.key_loc('0') == (1,3)
-assert kp.key_paths(kp.a_key, kp.key_loc('0')) == ["<"]
-assert kp.key_paths(kp.key_loc('0'), kp.key_loc('2')) == ["^"]
-assert len(kp.key_paths(kp.key_loc('2'), kp.key_loc('9'))) == 3
-assert ">^^" in kp.key_paths(kp.key_loc('2'), kp.key_loc('9'))
-assert "^>^" in kp.key_paths(kp.key_loc('2'), kp.key_loc('9'))
-assert "^^>" in kp.key_paths(kp.key_loc('2'), kp.key_loc('9'))
-assert len(kp.sequence_paths("029A")) == 3
-assert "<A^A>^^AvvvA" in kp.sequence_paths("029A")
-assert "<A^A^>^AvvvA" in kp.sequence_paths("029A")
-assert "<A^A^^>AvvvA" in kp.sequence_paths("029A")
+def complexity_total(codes: list[str], kp_seq: list[KeyPad]) -> int:
+    """compute the complexity total for the supplied codes and keypad sequences"""
+    total = 0
+    for code in codes:
+        paths = button_paths(code, kp_seq)
+        path = paths[0]
+        for i in range(1, len(paths)):
+            if len(paths[i]) < len(path):
+                path = paths[i]
+        #print(code + ": " + path)
+        total += int(code[:-1]) * len(path)
+    return total
+
+def button_paths(keys: str, keypads: list[KeyPad]) -> list[str]:
+    """build set of possible button paths for the keys"""
+    kpl = len(keypads)
+    kp = keypads[kpl-1]
+    paths = []
+    for p in kp.sequence_paths(keys):
+        if kpl == 1:
+            paths.append(p)
+        else:
+            for kpp in button_paths(p, keypads[:kpl-1]):
+                paths.append(kpp)
+    return paths
+
+# KeyPad Tests
+nkp = KeyPad(NUMERIC_LAYOUT)
+
+assert nkp.a_key == (2,3)
+assert nkp.key_loc('0') == (1,3)
+assert nkp.key_paths(nkp.a_key, nkp.key_loc('0')) == ["<"]
+assert nkp.key_paths(nkp.key_loc('0'), nkp.key_loc('2')) == ["^"]
+assert len(nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))) == 3
+assert ">^^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
+assert "^>^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
+assert "^^>" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
+assert len(nkp.sequence_paths("029A")) == 3
+assert "<A^A>^^AvvvA" in nkp.sequence_paths("029A")
+assert "<A^A^>^AvvvA" in nkp.sequence_paths("029A")
+assert "<A^A^^>AvvvA" in nkp.sequence_paths("029A")
+
+dkp = KeyPad(DIRECTIONAL_LAYOUT)
+assert dkp.a_key == (2,0)
+assert "v<<A>>^A<A>AvA<^AA>A<vAAA>^A" in dkp.sequence_paths("<A^A>^^AvvvA")
+assert "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A" in dkp.sequence_paths("v<<A>>^A<A>AvA<^AA>A<vAAA>^A")
 
 # Data
 data = read_lines("input/day21/input.txt")
@@ -107,9 +142,8 @@ sample = """029A
 379A""".splitlines()
 
 # Part 1
-assert solve_part1(sample) == 0
-assert solve_part1(data) == 0
+assert solve_part1(sample) == 126384
+assert solve_part1(data) == 212488
 
 # Part 2
-assert solve_part2(sample) == 0
 assert solve_part2(data) == 0
