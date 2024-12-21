@@ -31,24 +31,32 @@ class KeyPad:
                     self.a_key = (x,y)
 
     @functools.cache
-    def sequence_paths(self, keyseq: str) -> list[str]:
-        """determine a move path to press the supplied sequence"""
-        paths = [""]
-        loc = self.a_key
-        for key in keyseq:
-            kloc = self.key_loc(key)
-            kpaths = self.key_paths(loc, kloc)
-            wpaths = []
-            if kpaths is None:
-                for path in paths:
-                    wpaths.append(path + "A")
-            else:
-                for kpath in kpaths:
-                    for path in paths:
-                        wpaths.append(path + kpath + "A")
-            paths = wpaths
-            loc = kloc
-        return paths
+    def best_press_paths(self, keyseq: str, current: tuple[int,int]) -> list[str]:
+        """determine the best path to press the supplied key sequence from the supplied location"""
+        kloc = self.key_loc(keyseq[0])
+        if kloc == current:
+            kpaths = [""]
+        else:
+            kpaths = self.key_paths(current, kloc)
+        if len(keyseq) == 1:
+            rpaths = []
+            for p in kpaths:
+                rpaths.append(p + "A")
+            return rpaths
+        else:
+            addlt = self.best_press_paths(keyseq[1:], kloc)
+            paths_by_len = {}
+            min_len = -1
+            for a in addlt:
+                for k in kpaths:
+                    p = k + "A" + a
+                    l = len(p)
+                    if min_len == -1 or l < min_len:
+                        min_len = l
+                    pbl = paths_by_len.get(l, [])
+                    pbl.append(p)
+                    paths_by_len[l] = pbl
+            return paths_by_len[min_len]
 
     @functools.cache
     def key_paths(self, cur: tuple[int,int], goal: tuple[int,int]) -> list[str]:
@@ -74,10 +82,12 @@ class KeyPad:
                     paths.append(MOVES[move] + a)
         return paths
 
+    @functools.cache
     def distance(self, loc1: tuple[int,int], loc2: tuple[int,int]) -> int:
         """compute distance between two locations"""
         return abs(loc1[0]-loc2[0]) + abs(loc1[1]-loc2[1])
 
+    @functools.cache
     def key_loc(self, key: chr) -> tuple[int,int]:
         """get location for supplied key"""
         for y, row in enumerate(self.layout):
@@ -86,31 +96,43 @@ class KeyPad:
                     return (x,y)
         return None
 
-def complexity_total(codes: list[str], kp_seq: list[KeyPad]) -> int:
+def complexity_total(codes: list[str], keypads: list[KeyPad]) -> int:
     """compute the complexity total for the supplied codes and keypad sequences"""
     total = 0
     for code in codes:
-        paths = button_paths(code, kp_seq)
-        path = paths[0]
-        for i in range(1, len(paths)):
-            if len(paths[i]) < len(path):
-                path = paths[i]
-        #print(code + ": " + path)
-        total += int(code[:-1]) * len(path)
+        total += code_complexity(code, keypads)
     return total
 
-def button_paths(keys: str, keypads: list[KeyPad]) -> list[str]:
-    """build set of possible button paths for the keys"""
-    kpl = len(keypads)
-    kp = keypads[kpl-1]
-    paths = []
-    for p in kp.sequence_paths(keys):
-        if kpl == 1:
-            paths.append(p)
-        else:
-            for kpp in button_paths(p, keypads[:kpl-1]):
-                paths.append(kpp)
-    return paths
+def code_complexity(code: str, keypads: list[KeyPad]) -> int:
+    """compute the code complexity for a code"""
+    path = ""
+    npk = keypads[-1]
+    loc = npk.a_key
+    for k in code:
+        paths = button_path([k], keypads, loc)
+        path += paths[0]
+        loc = npk.key_loc(k)
+    #print(code + ": " + path)
+    return int(code[:-1]) * len(path)
+
+def button_path(key_seqs: list[str], keypads: list[KeyPad], start: tuple[int,int]) -> list[str]:
+    """build best set of paths to achieve supplied key_seqs on supplied keypads"""
+    kp = keypads[-1]
+    paths_by_len = {}
+    min_len = -1
+    for key_seq in key_seqs:
+        bpaths = kp.best_press_paths(key_seq, start)
+        for p in bpaths:
+            l = len(p)
+            if min_len == -1 or l <= min_len:
+                min_len = l
+                pbl = paths_by_len.get(l, [])
+                pbl.append(p)
+                paths_by_len[l] = pbl
+    bpaths = paths_by_len[min_len]
+    if len(keypads) == 1:
+        return bpaths
+    return button_path(bpaths, keypads[:-1], keypads[-2].a_key)
 
 # KeyPad Tests
 nkp = KeyPad(NUMERIC_LAYOUT)
@@ -123,15 +145,15 @@ assert len(nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))) == 3
 assert ">^^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
 assert "^>^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
 assert "^^>" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
-assert len(nkp.sequence_paths("029A")) == 3
-assert "<A^A>^^AvvvA" in nkp.sequence_paths("029A")
-assert "<A^A^>^AvvvA" in nkp.sequence_paths("029A")
-assert "<A^A^^>AvvvA" in nkp.sequence_paths("029A")
+assert len(nkp.best_press_paths("029A", nkp.a_key)) == 3
+assert "<A^A>^^AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
+assert "<A^A^>^AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
+assert "<A^A^^>AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
 
 dkp = KeyPad(DIRECTIONAL_LAYOUT)
 assert dkp.a_key == (2,0)
-assert "v<<A>>^A<A>AvA<^AA>A<vAAA>^A" in dkp.sequence_paths("<A^A>^^AvvvA")
-assert "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A" in dkp.sequence_paths("v<<A>>^A<A>AvA<^AA>A<vAAA>^A")
+assert "v<<A>>^A<A>AvA<^AA>A<vAAA>^A" in dkp.best_press_paths("<A^A>^^AvvvA", dkp.a_key)
+assert "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A" in dkp.best_press_paths("v<<A>>^A<A>AvA<^AA>A<vAAA>^A", dkp.a_key)
 
 # Data
 data = read_lines("input/day21/input.txt")
@@ -146,4 +168,4 @@ assert solve_part1(sample) == 126384
 assert solve_part1(data) == 212488
 
 # Part 2
-assert solve_part2(data) == 0
+#assert solve_part2(data) == 0
