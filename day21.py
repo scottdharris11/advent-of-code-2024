@@ -11,7 +11,7 @@ def solve_part1(lines: list[str]) -> int:
 @runner("Day 21", "Part 2")
 def solve_part2(lines: list[str]) -> int:
     """part 2 solving function"""
-    return complexity_total(lines, 4)
+    return complexity_total(lines, 25)
 
 MOVES = {(0,-1): '^', (0,1): 'v', (-1,0): '<', (1,0): '>'}
 NUMERIC_LAYOUT = [['7', '8', '9'],['4', '5', '6'],['1', '2', '3'],[None, '0', 'A']]
@@ -30,9 +30,10 @@ class KeyPad:
                 elif col == 'A':
                     self.a_key = (x,y)
 
+    #@functools.cache
     def best_press_paths(self, keyseq: str, current: tuple[int,int]) -> list[str]:
         """determine the best path to press the supplied key sequence from the supplied location"""
-        print("calculating path for sequence length: " + str(len((keyseq))))
+        #print("calculating path for sequence length: " + str(len((keyseq))))
         kloc = self.key_loc(keyseq[0])
         if kloc == current:
             kpaths = [""]
@@ -49,14 +50,14 @@ class KeyPad:
                 for k in kpaths:
                     paths.append(k + "A" + a)
 
-        print("potential paths discovered: " + str(len(paths)))
+        #print("potential paths discovered: " + str(len(paths)))
         if len(paths) == 1:
             return paths
 
         min_score = -1
         paths_by_score = {}
         for path in paths:
-            score = self.score_seq(path)
+            score = self.score_seq(path, current)
             if min_score == -1 or score <= min_score:
                 min_score = score
                 pbs = paths_by_score.get(score, [])
@@ -67,6 +68,7 @@ class KeyPad:
     @functools.cache
     def key_paths(self, cur: tuple[int,int], goal: tuple[int,int]) -> list[str]:
         """determine set of path moves that will get from current location to goal"""
+        print("finding best path between: " + str(cur) + " and " + str(goal))
         if cur == goal:
             return None
         cdist = self.distance(cur, goal)
@@ -86,16 +88,32 @@ class KeyPad:
             else:
                 for a in addlt:
                     paths.append(MOVES[move] + a)
-        return paths
 
-    def score_seq(self, keyseq: str) -> int:
+        if len(paths) == 1:
+            return paths
+
+        min_score = -1
+        paths_by_score = {}
+        for path in paths:
+            score = self.score_seq(path, cur)
+            if min_score == -1 or score <= min_score:
+                min_score = score
+                pbs = paths_by_score.get(score, [])
+                pbs.append(path)
+                paths_by_score[score] = pbs
+        return paths_by_score[min_score]
+
+    def score_seq(self, keyseq: str, start: tuple[int,int]) -> int:
         """score a sequence based on movements required from each back to a-key"""
         score = 0
+        loc = start
         for k in keyseq:
             kloc = self.key_loc(k)
             if kloc is None:
                 continue
-            score += self.distance(kloc, self.a_key) * 2
+            if loc != kloc:
+                score += self.distance(kloc, self.a_key) * 2
+                loc = kloc
         return score
 
     @functools.cache
@@ -140,17 +158,17 @@ def code_complexity(code: str, keypads: list[KeyPad]) -> int:
 
 def button_path(key_seqs: list[str], keypads: list[KeyPad], start: tuple[int,int]) -> list[str]:
     """build best set of paths to achieve supplied key_seqs on supplied keypads"""
-    print("button path sequences: " + str(len(key_seqs)) + ", keypad: " + str(len(keypads)))
+    #print("button path sequences: " + str(len(key_seqs)) + ", keypad: " + str(len(keypads)))
     kp = keypads[-1]
     paths_by_score = {}
     min_score = -1
     seq = 1
     for key_seq in key_seqs:
-        print("sequence: " + str(seq))
+        #print("sequence: " + str(seq))
         seq += 1
         bpaths = kp.best_press_paths(key_seq, start)
         for p in bpaths:
-            score = kp.score_seq(p)
+            score = kp.score_seq(p, start)
             if min_score == -1 or score <= min_score:
                 min_score = score
                 pbs = paths_by_score.get(score, [])
@@ -191,8 +209,8 @@ sample = """029A
 379A""".splitlines()
 
 # Part 1
-#assert solve_part1(sample) == 126384
-#assert solve_part1(data) == 212488
+assert solve_part1(sample) == 126384
+assert solve_part1(data) == 212488
 
 # Part 2
 assert solve_part2(data) == 0
