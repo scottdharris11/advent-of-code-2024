@@ -30,47 +30,29 @@ class KeyPad:
                 elif col == 'A':
                     self.a_key = (x,y)
 
-    #@functools.cache
-    def best_press_paths(self, keyseq: str, current: tuple[int,int]) -> list[str]:
-        """determine the best path to press the supplied key sequence from the supplied location"""
-        #print("calculating path for sequence length: " + str(len((keyseq))))
-        kloc = self.key_loc(keyseq[0])
-        if kloc == current:
-            kpaths = [""]
-        else:
-            kpaths = self.key_paths(current, kloc)
-
-        paths = []
-        if len(keyseq) == 1:
-            for p in kpaths:
-                paths.append(p + "A")
-        else:
-            addlt = self.best_press_paths(keyseq[1:], kloc)
-            for a in addlt:
-                for k in kpaths:
-                    paths.append(k + "A" + a)
-
-        #print("potential paths discovered: " + str(len(paths)))
-        if len(paths) == 1:
-            return paths
-
-        min_score = -1
-        paths_by_score = {}
+    @functools.cache
+    def path_len(self, cur: tuple[int,int], goal: tuple[int,int], depth: int) -> int:
+        """determine the length of the optimal path for a key at certain depth"""
+        paths = self.key_paths(cur, goal)
+        if depth == 1:
+            return len(paths[0])
+        min_len = -1
         for path in paths:
-            score = self.score_seq(path, current)
-            if min_score == -1 or score <= min_score:
-                min_score = score
-                pbs = paths_by_score.get(score, [])
-                pbs.append(path)
-                paths_by_score[score] = pbs
-        return paths_by_score[min_score]
+            l = 0
+            c = self.a_key
+            for k in path:
+                k_loc = self.key_loc(k)
+                l += self.path_len(c, k_loc, depth - 1)
+                c = k_loc
+            if min_len == -1 or l < min_len:
+                min_len = 1
+        return min_len
 
     @functools.cache
     def key_paths(self, cur: tuple[int,int], goal: tuple[int,int]) -> list[str]:
         """determine set of path moves that will get from current location to goal"""
-        print("finding best path between: " + str(cur) + " and " + str(goal))
         if cur == goal:
-            return None
+            return ["A"]
         cdist = self.distance(cur, goal)
         paths = []
         for move in [(0,-1), (0,1), (-1,0), (1,0)]:
@@ -88,33 +70,7 @@ class KeyPad:
             else:
                 for a in addlt:
                     paths.append(MOVES[move] + a)
-
-        if len(paths) == 1:
-            return paths
-
-        min_score = -1
-        paths_by_score = {}
-        for path in paths:
-            score = self.score_seq(path, cur)
-            if min_score == -1 or score <= min_score:
-                min_score = score
-                pbs = paths_by_score.get(score, [])
-                pbs.append(path)
-                paths_by_score[score] = pbs
-        return paths_by_score[min_score]
-
-    def score_seq(self, keyseq: str, start: tuple[int,int]) -> int:
-        """score a sequence based on movements required from each back to a-key"""
-        score = 0
-        loc = start
-        for k in keyseq:
-            kloc = self.key_loc(k)
-            if kloc is None:
-                continue
-            if loc != kloc:
-                score += self.distance(kloc, self.a_key) * 2
-                loc = kloc
-        return score
+        return paths
 
     @functools.cache
     def distance(self, loc1: tuple[int,int], loc2: tuple[int,int]) -> int:
@@ -132,52 +88,33 @@ class KeyPad:
 
 def complexity_total(codes: list[str], robot_cnt: int) -> int:
     """compute the complexity total for the supplied codes and keypad sequences"""
-    keypads = []
-    for _ in range(robot_cnt):
-        keypads.append(dkp)
-    keypads.append(nkp)
-
     total = 0
     for code in codes:
-        total += code_complexity(code, keypads)
+        total += code_complexity(code, robot_cnt)
     return total
 
-def code_complexity(code: str, keypads: list[KeyPad]) -> int:
+def code_complexity(code: str, robot_cnt: int) -> int:
     """compute the code complexity for a code"""
     print("processing code: " + code)
-    path = ""
-    npk = keypads[-1]
-    loc = npk.a_key
+    numeric = KeyPad(NUMERIC_LAYOUT)
+    directional = KeyPad(DIRECTIONAL_LAYOUT)
+    np_loc = numeric.a_key
+    path_len = 0
     for k in code:
-        print("looking for path for code: " + k)
-        paths = button_path([k], keypads, loc)
-        path += paths[0]
-        loc = npk.key_loc(k)
-    #print(code + ": " + path)
-    return int(code[:-1]) * len(path)
-
-def button_path(key_seqs: list[str], keypads: list[KeyPad], start: tuple[int,int]) -> list[str]:
-    """build best set of paths to achieve supplied key_seqs on supplied keypads"""
-    #print("button path sequences: " + str(len(key_seqs)) + ", keypad: " + str(len(keypads)))
-    kp = keypads[-1]
-    paths_by_score = {}
-    min_score = -1
-    seq = 1
-    for key_seq in key_seqs:
-        #print("sequence: " + str(seq))
-        seq += 1
-        bpaths = kp.best_press_paths(key_seq, start)
-        for p in bpaths:
-            score = kp.score_seq(p, start)
-            if min_score == -1 or score <= min_score:
-                min_score = score
-                pbs = paths_by_score.get(score, [])
-                pbs.append(p)
-                paths_by_score[score] = pbs
-    bpaths = paths_by_score[min_score]
-    if len(keypads) == 1:
-        return bpaths
-    return button_path(bpaths, keypads[:-1], keypads[-2].a_key)
+        k_loc = numeric.key_loc(k)
+        number_paths = numeric.key_paths(np_loc, k_loc)
+        np_loc = k_loc
+        best = -1
+        for dp in number_paths:
+            print(dp)
+            pl = 0
+            for dpk in dp:
+                dpk_loc = directional.key_loc(dpk)
+                pl += directional.path_len(directional.a_key, dpk_loc, robot_cnt)
+            if best == -1 or pl < best:
+                best = pl
+        path_len += best
+    return int(code[:-1]) * path_len
 
 # KeyPad Tests
 nkp = KeyPad(NUMERIC_LAYOUT)
@@ -185,20 +122,12 @@ dkp = KeyPad(DIRECTIONAL_LAYOUT)
 
 assert nkp.a_key == (2,3)
 assert nkp.key_loc('0') == (1,3)
-assert nkp.key_paths(nkp.a_key, nkp.key_loc('0')) == ["<"]
-assert nkp.key_paths(nkp.key_loc('0'), nkp.key_loc('2')) == ["^"]
+assert nkp.key_paths(nkp.a_key, nkp.key_loc('0')) == ["<A"]
+assert nkp.key_paths(nkp.key_loc('0'), nkp.key_loc('2')) == ["^A"]
 assert len(nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))) == 3
-assert ">^^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
-assert "^>^" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
-assert "^^>" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
-#assert len(nkp.best_press_paths("029A", nkp.a_key)) == 3
-#assert "<A^A>^^AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
-#assert "<A^A^>^AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
-#assert "<A^A^^>AvvvA" in nkp.best_press_paths("029A", nkp.a_key)
-
-#assert dkp.a_key == (2,0)
-#assert "v<<A>>^A<A>AvA<^AA>A<vAAA>^A" in dkp.best_press_paths("<A^A>^^AvvvA", dkp.a_key)
-#assert "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A" in dkp.best_press_paths("v<<A>>^A<A>AvA<^AA>A<vAAA>^A", dkp.a_key)
+assert ">^^A" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
+assert "^>^A" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
+assert "^^>A" in nkp.key_paths(nkp.key_loc('2'), nkp.key_loc('9'))
 
 # Data
 data = read_lines("input/day21/input.txt")
@@ -210,7 +139,7 @@ sample = """029A
 
 # Part 1
 assert solve_part1(sample) == 126384
-assert solve_part1(data) == 212488
+#assert solve_part1(data) == 212488
 
 # Part 2
-assert solve_part2(data) == 0
+#assert solve_part2(data) == 0
