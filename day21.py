@@ -33,19 +33,26 @@ class KeyPad:
     @functools.cache
     def path_len(self, cur: tuple[int,int], goal: tuple[int,int], depth: int) -> int:
         """determine the length of the optimal path for a key at certain depth"""
+        #print(("Finding best path for;",cur,goal,depth))
         paths = self.key_paths(cur, goal)
         if depth == 1:
+            #print(("Best Dir Path:", cur, goal, depth, paths[0], len(paths[0])))
             return len(paths[0])
         min_len = -1
+        mpath = None
         for path in paths:
+            #print(("Expanding Path:", path, depth))
             l = 0
-            c = self.a_key
+            loc = self.a_key
             for k in path:
                 k_loc = self.key_loc(k)
-                l += self.path_len(c, k_loc, depth - 1)
-                c = k_loc
+                l += self.path_len(loc, k_loc, depth - 1)
+                loc = k_loc
+            #print(("Path Expanded:", path, depth, l))
             if min_len == -1 or l < min_len:
-                min_len = 1
+                min_len = l
+                mpath = path
+        #print(("Best Dir Path:", cur, goal, depth, mpath, min_len))
         return min_len
 
     @functools.cache
@@ -95,24 +102,31 @@ def complexity_total(codes: list[str], robot_cnt: int) -> int:
 
 def code_complexity(code: str, robot_cnt: int) -> int:
     """compute the code complexity for a code"""
-    print("processing code: " + code)
+    #print("processing code: " + code)
     numeric = KeyPad(NUMERIC_LAYOUT)
     directional = KeyPad(DIRECTIONAL_LAYOUT)
     np_loc = numeric.a_key
     path_len = 0
     for k in code:
+        #print(("Processing Number Code:", k))
         k_loc = numeric.key_loc(k)
         number_paths = numeric.key_paths(np_loc, k_loc)
         np_loc = k_loc
         best = -1
+        np = None
         for dp in number_paths:
-            print(dp)
+            #print(("Processsing Number Path:", dp))
             pl = 0
+            loc = directional.a_key
             for dpk in dp:
                 dpk_loc = directional.key_loc(dpk)
-                pl += directional.path_len(directional.a_key, dpk_loc, robot_cnt)
+                pl += directional.path_len(loc, dpk_loc, robot_cnt)
+                loc = dpk_loc
+            #print(("Number Path:", dp, pl))
             if best == -1 or pl < best:
                 best = pl
+                np = dp
+        #print(("Best Number Path:", np, best))
         path_len += best
     return int(code[:-1]) * path_len
 
@@ -138,8 +152,9 @@ sample = """029A
 379A""".splitlines()
 
 # Part 1
+assert solve_part1(["029A"]) == 1972
 assert solve_part1(sample) == 126384
-#assert solve_part1(data) == 212488
+assert solve_part1(data) == 212488
 
 # Part 2
-#assert solve_part2(data) == 0
+assert solve_part2(data) == 258263972600402
