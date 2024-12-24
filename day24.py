@@ -60,35 +60,15 @@ class Gate:
         wire2 = wires.get(self.inwire2)
         if wire1 is None or wire2 is None:
             return False
-        out = None
         if self.gate_type == "AND":
-            out = self.andgate(wire1, wire2)
+            self.output = wire1 & wire2
         elif self.gate_type == "OR":
-            out = self.orgate(wire1, wire2)
+            self.output = wire1 | wire2
         else:
-            out = self.xorgate(wire1, wire2)
-        self.output = out
-        wires[self.outwire] = out
+            self.output = wire1 ^ wire2
+        wires[self.outwire] = self.output
         self.executed = True
         return True
-
-    def andgate(self, wire1: int, wire2: int) -> int:
-        """evalute an 'and' gate"""
-        if wire1 == 1 and wire2 == 1:
-            return 1
-        return 0
-
-    def orgate(self, wire1: int, wire2: int) -> int:
-        """evaluate an 'or' gate"""
-        if wire1 == 1 or wire2 == 1:
-            return 1
-        return 0
-
-    def xorgate(self, wire1: int, wire2: int) -> int:
-        """evaluate an 'xor' gate"""
-        if wire1 != wire2:
-            return 1
-        return 0
 
 def parse_wires(lines: list[str]) -> tuple[dict[str,int],int]:
     """parse initial wire values"""
@@ -244,4 +224,4 @@ assert solve_part1(data) == 59336987801432
 
 # Part 2
 #assert solve_part2(sample3) == "z00,z01,z02,z05"
-assert solve_part2(data) == ""
+#assert solve_part2(data) == ""
