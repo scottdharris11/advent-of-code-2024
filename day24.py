@@ -28,15 +28,17 @@ def solve_part2(lines: list[str]) -> str:
     for i, gate in enumerate(gates):
         gates_by_output[gate.outwire] = i
 
-    swap_candidates = set()
+    swap_candidates = {}
     for i, b in enumerate(expected_bits):
         if b == actual_bits[i]:
             continue
         gi = gates_by_output['z' + str(i).zfill(2)]
-        swap_candidates.add(gi)
-        swap_impact(gates[gi], gates, gates_by_output, swap_candidates)
+        sc = swap_candidates.get(actual_bits[i],set())
+        sc.add(gi)
+        swap_candidates[actual_bits[i]] = sc
+        swap_impact(gates[gi], gates, gates_by_output, swap_candidates, wires)
 
-    print(len(swap_candidates))
+    print((len(swap_candidates[0]),len(swap_candidates[1])))
     return "not done yet"
 
 class Gate:
@@ -138,16 +140,20 @@ def value_to_bits(value: int, bit_count:int) -> list[int]:
         bits.append(work & 1)
     return bits
 
-def swap_impact(gate: Gate, gates: list[Gate], gates_by_output: dict[str,int], swap: set[int]):
+def swap_impact(gate: Gate, gates: list[Gate], gates_by_output: dict[str,int], swap: dict[int,set[int]], wires: dict[str,int]):
     """recursively find swap impacts"""
     if gate.inwire1[0] != 'x' and gate.inwire1[0] != 'y' and gate.inwire1 not in swap:
         idx = gates_by_output[gate.inwire1]
-        swap.add(idx)
-        swap_impact(gates[idx], gates, gates_by_output, swap)
+        s = swap.get(wires[gate.inwire1], set())
+        s.add(idx)
+        swap[wires[gate.inwire1]] = s
+        swap_impact(gates[idx], gates, gates_by_output, swap, wires)
     if gate.inwire2[0] != 'x' and gate.inwire2[0] != 'y' and gate.inwire2 not in swap:
         idx = gates_by_output[gate.inwire2]
-        swap.add(idx)
-        swap_impact(gates[idx], gates, gates_by_output, swap)
+        s = swap.get(wires[gate.inwire2], set())
+        s.add(idx)
+        swap[wires[gate.inwire2]] = s
+        swap_impact(gates[idx], gates, gates_by_output, swap, wires)
 
 # Data
 data = read_lines("input/day24/input.txt")
