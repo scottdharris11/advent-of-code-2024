@@ -7,26 +7,37 @@ def solve_part1(lines: list[str]) -> int:
     """part 1 solving function"""
     wires, sidx = parse_wires(lines)
     gates = parse_gates(lines[sidx:])
-    while True:
-        alldone = True
-        for gate in gates:
-            if not gate.execute(wires):
-                alldone = False
-        if alldone:
-            break
-    output = 0
-    for wire, value in wires.items():
-        if wire[0] != 'z' or value == 0:
-            continue
-        shift = int(wire[1:])
-        svalue = 1 << shift
-        output |= svalue
+    execute_gates(wires, gates)
+    output, _ = value_from_bits(wires, 'z')
     return output
 
 @runner("Day 24", "Part 2")
 def solve_part2(lines: list[str]) -> str:
     """part 2 solving function"""
-    return 0
+    wires, sidx = parse_wires(lines)
+    gates = parse_gates(lines[sidx:])
+    x, _ = value_from_bits(wires, 'x')
+    y, _ = value_from_bits(wires, 'y')
+    execute_gates(wires, gates)
+    actual, zcnt = value_from_bits(wires, 'z')
+    expected = x & y
+    expected_bits = value_to_bits(expected, zcnt)
+    actual_bits = value_to_bits(actual, zcnt)
+
+    gates_by_output = {}
+    for i, gate in enumerate(gates):
+        gates_by_output[gate.outwire] = i
+
+    swap_candidates = set()
+    for i, b in enumerate(expected_bits):
+        if b == actual_bits[i]:
+            continue
+        gi = gates_by_output['z' + str(i).zfill(2)]
+        swap_candidates.add(gi)
+        swap_impact(gates[gi], gates, gates_by_output, swap_candidates)
+
+    print(len(swap_candidates))
+    return "not done yet"
 
 class Gate:
     """represents a logic gate"""
@@ -54,6 +65,7 @@ class Gate:
             out = self.orgate(wire1, wire2)
         else:
             out = self.xorgate(wire1, wire2)
+        self.output = out
         wires[self.outwire] = out
         self.executed = True
         return True
@@ -92,6 +104,50 @@ def parse_gates(lines: list[str]) -> list[Gate]:
     for line in lines:
         gates.append(Gate(line))
     return gates
+
+def execute_gates(wires: dict[str,int], gates: list[Gate]):
+    """execute gates until all have completed"""
+    while True:
+        alldone = True
+        for gate in gates:
+            if not gate.execute(wires):
+                alldone = False
+        if alldone:
+            break
+
+def value_from_bits(wires: dict[str,int], prefix: chr) -> tuple[int,int]:
+    """compute value from bits with supplied prefix"""
+    output = 0
+    count = 0
+    for wire, value in wires.items():
+        if wire[0] != prefix:
+            continue
+        count += 1
+        if value == 0:
+            continue
+        shift = int(wire[1:])
+        svalue = 1 << shift
+        output |= svalue
+    return output, count
+
+def value_to_bits(value: int, bit_count:int) -> list[int]:
+    """convert a value into array of bits"""
+    bits = []
+    for i in range(bit_count):
+        work = value >> i
+        bits.append(work & 1)
+    return bits
+
+def swap_impact(gate: Gate, gates: list[Gate], gates_by_output: dict[str,int], swap: set[int]):
+    """recursively find swap impacts"""
+    if gate.inwire1[0] != 'x' and gate.inwire1[0] != 'y' and gate.inwire1 not in swap:
+        idx = gates_by_output[gate.inwire1]
+        swap.add(idx)
+        swap_impact(gates[idx], gates, gates_by_output, swap)
+    if gate.inwire2[0] != 'x' and gate.inwire2[0] != 'y' and gate.inwire2 not in swap:
+        idx = gates_by_output[gate.inwire2]
+        swap.add(idx)
+        swap_impact(gates[idx], gates, gates_by_output, swap)
 
 # Data
 data = read_lines("input/day24/input.txt")
@@ -152,6 +208,28 @@ y03 OR x01 -> nrd
 hwm AND bqk -> z03
 tgd XOR rvg -> z12
 tnw OR pbm -> gnj""".splitlines()
+sample3 = """x00: 0
+x01: 1
+x02: 0
+x03: 1
+x04: 0
+x05: 1
+y00: 0
+y01: 0
+y02: 1
+y03: 1
+y04: 0
+y05: 1
+
+x00 AND y00 -> z05
+x01 AND y01 -> z02
+x02 AND y02 -> z01
+x03 AND y03 -> z03
+x04 AND y04 -> z04
+x05 AND y05 -> z00""".splitlines()
+
+assert value_to_bits(11, 4) == [1,1,0,1]
+assert value_to_bits(13, 4) == [1,0,1,1]
 
 # Part 1
 assert solve_part1(sample) == 4
@@ -159,5 +237,5 @@ assert solve_part1(sample2) == 2024
 assert solve_part1(data) == 59336987801432
 
 # Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
+#assert solve_part2(sample3) == "z00,z01,z02,z05"
+assert solve_part2(data) == ""
