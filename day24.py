@@ -14,16 +14,47 @@ def solve_part1(lines: list[str]) -> int:
 @runner("Day 24", "Part 2")
 def solve_part2(lines: list[str]) -> str:
     """part 2 solving function"""
+    # After thinking about this for a while and having no clue
+    # how to proceed since the combination of wires to switch
+    # was way too emmense, i consulted hyperneutrino video on the
+    # day which led me to not verifying the output, but verifying
+    # the formula construction.  Since we are attempting to "add"
+    # two values, the forumulas should be inline with binary addition
+    # principles.  the tricky piece is dealing with the carry bits.
+    # This will be my adaption of his solution with hopefully my
+    # understanding of the approach and rationale. Check out his
+    # video on the day here: https://www.youtube.com/watch?v=SU6lp6wyd3I
+    #
+    # Here are the rules we will be looking for to validate:
+    #  1. starting with each zwire output, ensure that the wire is generated
+    #     by an XOR since we only want a one when exactly one of the inputs
+    #     is a 1.  0::0 would be 0 with no carry.  1::1 would be 0 with carry.
+    #  2. if the zwire output is from a x/y wire (input wire), then it must
+    #     align with the same level (e.g z01 would need to be x01/y01) since 
+    #     that would be required for adding numbers properly.
+    #  3. when not a x/y input, we need to look at each of the input wire
+    #     formulaes to validate them.
+    #  4. for positions after 0, the carry bit must be considered, so any direct
+    #     usage of x/y input would be wrong.
+    #  5. one side of the input formulaes should always be a "XOR" of the corresponding
+    #     x/y input wires.  the other side will contain a formulae to represent the
+    #     carry bit.
+    #  6. carry bit case for position 1 is simple (should be AND of inputs x00 and y00)
+    #     since it would only contain a value if both x00 and y00 were 1.
+    #  7. carry bit for positions 2 and on will be...
     _, sidx = parse_wires(lines)
     gates = parse_gates(lines[sidx:])
-    zidx = 0
-    while True:
-        wname = 'z' + str(zidx).zfill(2)
-        gate = find_gate(gates, wname)
-        if gate is None:
-            break
-        print_gate(gates, gate, 0)
-        zidx += 1
+    gbw = {}
+    for gate in gates:
+        gbw[gate.outwire] = gate
+
+    print(pp(gbw, "z01", 0))
+    print(pp(gbw, "z02", 0))
+    print(pp(gbw, "z03", 0))
+
+    for zidx in range(46):
+        zwire = wire_name('z', zidx)
+        validate_wire_gate(find_gate(gates, zwire), gates, 0)
     return "not done yet"
 
 class Gate:
@@ -100,6 +131,10 @@ def value_from_bits(wires: dict[str,int], prefix: chr) -> tuple[int,int]:
         output |= svalue
     return output, count
 
+def wire_name(prefix: chr, number: int) -> str:
+    """convert prefix and wire number into wire name"""
+    return prefix + str(number).zfill(2)
+
 def find_gate(gates: list[Gate], outwire: str) -> Gate:
     """find the gate with the given outwire"""
     for gate in gates:
@@ -107,13 +142,25 @@ def find_gate(gates: list[Gate], outwire: str) -> Gate:
             return gate
     return None
 
-def print_gate(gates: list[Gate], gate: Gate, level: int):
+def validate_wire_gate(gate: Gate, gates: list[Gate], level: int) -> bool:
+    """validate the z output gate is correct"""
+    # input gate into zwire must be an XOR since 0:0 would result
+    # in zero and 1:1 would result in zero with a carry bit.  so, in
+    # order to get the proper output, an xor gate is the only one
+    # that will give the proper value (only one bit is on).
+    if gate.gate_type != "XOR":
+        print((gate.outwire, "not xor"))
+        return False
+    return True
+
+def pp(gates: dict[str,Gate], wire: str, level: int) -> str:
     """print out a gate"""
-    print("  " * level + str(gate))
-    if gate.inwire1[0] not in ['x', 'y']:
-        print_gate(gates, find_gate(gates, gate.inwire1), level+1)
-    if gate.inwire2[0] not in ['x', 'y']:
-        print_gate(gates, find_gate(gates, gate.inwire2), level+1)
+    if wire[0] in "xy":
+        return "  " * level + wire
+    gate = gates[wire]
+    return "  " * level + str(gate) + "\n" + \
+           pp(gates, gate.inwire1, level + 1) + "\n" + \
+           pp(gates, gate.inwire2, level + 1)
 
 # Data
 data = read_lines("input/day24/input.txt")
@@ -174,25 +221,6 @@ y03 OR x01 -> nrd
 hwm AND bqk -> z03
 tgd XOR rvg -> z12
 tnw OR pbm -> gnj""".splitlines()
-sample3 = """x00: 0
-x01: 1
-x02: 0
-x03: 1
-x04: 0
-x05: 1
-y00: 0
-y01: 0
-y02: 1
-y03: 1
-y04: 0
-y05: 1
-
-x00 AND y00 -> z05
-x01 AND y01 -> z02
-x02 AND y02 -> z01
-x03 AND y03 -> z03
-x04 AND y04 -> z04
-x05 AND y05 -> z00""".splitlines()
 
 # Part 1
 assert solve_part1(sample) == 4
@@ -200,5 +228,4 @@ assert solve_part1(sample2) == 2024
 assert solve_part1(data) == 59336987801432
 
 # Part 2
-#assert solve_part2(sample3) == "z00,z01,z02,z05"
 assert solve_part2(data) == ""
