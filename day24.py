@@ -14,31 +14,16 @@ def solve_part1(lines: list[str]) -> int:
 @runner("Day 24", "Part 2")
 def solve_part2(lines: list[str]) -> str:
     """part 2 solving function"""
-    wires, sidx = parse_wires(lines)
+    _, sidx = parse_wires(lines)
     gates = parse_gates(lines[sidx:])
-    x, _ = value_from_bits(wires, 'x')
-    y, _ = value_from_bits(wires, 'y')
-    execute_gates(wires, gates)
-    actual, zcnt = value_from_bits(wires, 'z')
-    expected = x & y
-    expected_bits = value_to_bits(expected, zcnt)
-    actual_bits = value_to_bits(actual, zcnt)
-
-    gates_by_output = {}
-    for i, gate in enumerate(gates):
-        gates_by_output[gate.outwire] = i
-
-    swap_candidates = {}
-    for i, b in enumerate(expected_bits):
-        if b == actual_bits[i]:
-            continue
-        gi = gates_by_output['z' + str(i).zfill(2)]
-        sc = swap_candidates.get(actual_bits[i],set())
-        sc.add(gi)
-        swap_candidates[actual_bits[i]] = sc
-        swap_impact(gates[gi], gates, gates_by_output, swap_candidates, wires)
-
-    print((len(swap_candidates[0]),len(swap_candidates[1])))
+    zidx = 0
+    while True:
+        wname = 'z' + str(zidx).zfill(2)
+        gate = find_gate(gates, wname)
+        if gate is None:
+            break
+        print_gate(gates, gate, 0)
+        zidx += 1
     return "not done yet"
 
 class Gate:
@@ -51,6 +36,9 @@ class Gate:
         self.gate_type = pieces[1]
         self.executed = False
         self.output = None
+
+    def __str__(self):
+        return str((self.inwire1, self.gate_type, self.inwire2, " = ", self.outwire))
 
     def execute(self, wires: dict[str,int]) -> bool:
         """execute a gate if both inputs available"""
@@ -112,28 +100,20 @@ def value_from_bits(wires: dict[str,int], prefix: chr) -> tuple[int,int]:
         output |= svalue
     return output, count
 
-def value_to_bits(value: int, bit_count:int) -> list[int]:
-    """convert a value into array of bits"""
-    bits = []
-    for i in range(bit_count):
-        work = value >> i
-        bits.append(work & 1)
-    return bits
+def find_gate(gates: list[Gate], outwire: str) -> Gate:
+    """find the gate with the given outwire"""
+    for gate in gates:
+        if gate.outwire == outwire:
+            return gate
+    return None
 
-def swap_impact(gate: Gate, gates: list[Gate], gates_by_output: dict[str,int], swap: dict[int,set[int]], wires: dict[str,int]):
-    """recursively find swap impacts"""
-    if gate.inwire1[0] != 'x' and gate.inwire1[0] != 'y' and gate.inwire1 not in swap:
-        idx = gates_by_output[gate.inwire1]
-        s = swap.get(wires[gate.inwire1], set())
-        s.add(idx)
-        swap[wires[gate.inwire1]] = s
-        swap_impact(gates[idx], gates, gates_by_output, swap, wires)
-    if gate.inwire2[0] != 'x' and gate.inwire2[0] != 'y' and gate.inwire2 not in swap:
-        idx = gates_by_output[gate.inwire2]
-        s = swap.get(wires[gate.inwire2], set())
-        s.add(idx)
-        swap[wires[gate.inwire2]] = s
-        swap_impact(gates[idx], gates, gates_by_output, swap, wires)
+def print_gate(gates: list[Gate], gate: Gate, level: int):
+    """print out a gate"""
+    print("  " * level + str(gate))
+    if gate.inwire1[0] not in ['x', 'y']:
+        print_gate(gates, find_gate(gates, gate.inwire1), level+1)
+    if gate.inwire2[0] not in ['x', 'y']:
+        print_gate(gates, find_gate(gates, gate.inwire2), level+1)
 
 # Data
 data = read_lines("input/day24/input.txt")
@@ -214,9 +194,6 @@ x03 AND y03 -> z03
 x04 AND y04 -> z04
 x05 AND y05 -> z00""".splitlines()
 
-assert value_to_bits(11, 4) == [1,1,0,1]
-assert value_to_bits(13, 4) == [1,0,1,1]
-
 # Part 1
 assert solve_part1(sample) == 4
 assert solve_part1(sample2) == 2024
@@ -224,4 +201,4 @@ assert solve_part1(data) == 59336987801432
 
 # Part 2
 #assert solve_part2(sample3) == "z00,z01,z02,z05"
-#assert solve_part2(data) == ""
+assert solve_part2(data) == ""
