@@ -13,11 +13,6 @@ def solve_part1(lines: list[str]) -> int:
                 fit += 1
     return fit
 
-@runner("Day 25", "Part 2")
-def solve_part2(lines: list[str]) -> int:
-    """part 2 solving function"""
-    return 0
-
 def parse_schematics(lines: list[str]) -> tuple[list[list[int]], list[list[int]]]:
     """parse set of locks and keys from input"""
     locks = []
@@ -108,7 +103,3 @@ sample = """#####
 # Part 1
 assert solve_part1(sample) == 3
 assert solve_part1(data) == 2691
-
-# Part 2
-assert solve_part2(sample) == 0
-assert solve_part2(data) == 0
