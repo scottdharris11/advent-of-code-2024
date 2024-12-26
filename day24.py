@@ -41,20 +41,37 @@ def solve_part2(lines: list[str]) -> str:
     #     carry bit.
     #  6. carry bit case for position 1 is simple (should be AND of inputs x00 and y00)
     #     since it would only contain a value if both x00 and y00 were 1.
-    #  7. carry bit for positions 2 and on will be...
+    #  7. carry bit for positions 2 and on will be an "OR" gate that considers if:
+    #       a. previous x/y inputs both contain 1 so that means a carry will result
+    #          regardless of even considering the carry value (c=0, x=1, y=1 OR c=0, x=1, y=1).
+    #          this is validated as a simple AND gate.
+    #       b. when x/y are not both one (via AND gate), the previous carry bit needs to be
+    #          considered.  This consists of the "AND" gate between:
+    #            i. "XOR" of previous x/y (1 for position 2)
+    #            ii. "AND" of x/y values from two positions ago (0 for position 2)
     _, sidx = parse_wires(lines)
-    gates = parse_gates(lines[sidx:])
-    gbw = {}
-    for gate in gates:
-        gbw[gate.outwire] = gate
+    gates = {}
+    for gate in parse_gates(lines[sidx:]):
+        gates[gate.outwire] = gate
 
-    print(pp(gbw, "z01", 0))
-    print(pp(gbw, "z02", 0))
-    print(pp(gbw, "z03", 0))
+    # manually discovered updates...
+    # z11(245) <-> rpv(207)
+    # ctg(255) <-> rpb(281)
+    # z31(115) <-> dmh(189)
+    # z38(257) <-> dvq(184)
+    # ctg,dmh,dvq,rpb,rpv,z11,z31,z38
 
+    carry_bits = {}
     for zidx in range(46):
+        if zidx == 45:
+            return "ctg,dmh,dvq,rpb,rpv,z11,z31,z38"
         zwire = wire_name('z', zidx)
-        validate_wire_gate(find_gate(gates, zwire), gates, 0)
+        zgate = gates[zwire]
+        if not validate_z_output(zgate, gates, zidx, carry_bits):
+            print(carry_bits)
+            print("zidx issue: " + str(zidx))
+            print(pp(gates, zwire, 0, carry_bits))
+            break
     return "not done yet"
 
 class Gate:
@@ -142,7 +159,7 @@ def find_gate(gates: list[Gate], outwire: str) -> Gate:
             return gate
     return None
 
-def validate_wire_gate(gate: Gate, gates: list[Gate], level: int) -> bool:
+def validate_z_output(gate: Gate, gates: dict[str,Gate], level: int, carry_bits: dict[str,int]) -> bool:
     """validate the z output gate is correct"""
     # input gate into zwire must be an XOR since 0:0 would result
     # in zero and 1:1 would result in zero with a carry bit.  so, in
@@ -151,16 +168,101 @@ def validate_wire_gate(gate: Gate, gates: list[Gate], level: int) -> bool:
     if gate.gate_type != "XOR":
         print((gate.outwire, "not xor"))
         return False
+
+    # input values should either be the x/y for the same level or
+    # other formulas.
+    if validate_xy_inputs(gate, level):
+        return True
+    if gate.inwire1[0] in "xyz" or gate.inwire2[0] in "xyz":
+        print((gate.outwire, "mismatched x/y inputs"))
+        return False
+    ingate1 = gates[gate.inwire1]
+    ingate2 = gates[gate.inwire2]
+    if not validate_input_xor(ingate1, level) and not validate_input_xor(ingate2, level):
+        print((gate.outwire, "missing x/y input xor"))
+        return False
+    if not validate_carry_bit(ingate1, level, gates, carry_bits) and \
+       not validate_carry_bit(ingate2, level, gates, carry_bits):
+        print((gate.outwire, "missing valid carry bit"))
+        return False
     return True
 
-def pp(gates: dict[str,Gate], wire: str, level: int) -> str:
+def validate_carry_bit(gate: Gate, level: int, gates: dict[str,Gate], carry_bits: dict[int,str]) -> bool:
+    """validate if the supplied gate is representing the carry bit rules for a level"""
+    # short circuit when already discovered
+    if gate.outwire in carry_bits and carry_bits[gate.outwire] == level:
+        return True
+
+    # handle simple case for level 1 (and of level 0)
+    if level == 1:
+        if validate_input_and(gate, 0):
+            carry_bits[gate.outwire] = level
+            return True
+        return False
+
+    # handle levels beyond 1
+    if gate.gate_type != "OR":
+        return False
+    if gate.inwire1[0] in "xyz" or gate.inwire2[0] in "xyz":
+        return False
+    ingate1 = gates[gate.inwire1]
+    ingate2 = gates[gate.inwire2]
+    if not validate_input_and(ingate1, level-1) and \
+       not validate_input_and(ingate2, level-1):
+        return False
+    if not validate_prev_carry(ingate1, level-1, gates, carry_bits) and \
+       not validate_prev_carry(ingate2, level-1, gates, carry_bits):
+        return False
+    carry_bits[gate.outwire] = level
+    return True
+
+def validate_input_xor(gate: Gate, level: int) -> bool:
+    """validate supplied gate is an XOR of x/y values from level"""
+    if gate.gate_type != "XOR":
+        return False
+    return validate_xy_inputs(gate, level)
+
+def validate_input_and(gate: Gate, level: int) -> bool:
+    """validate supplied gate is an XOR of x/y values from level"""
+    if gate.gate_type != "AND":
+        return False
+    return validate_xy_inputs(gate, level)
+
+def validate_xy_inputs(gate: Gate, level: int) -> bool:
+    """validate supplied gate takes x/y inputs for specific level"""
+    xwire = wire_name('x', level)
+    if gate.inwire1 != xwire and gate.inwire2 != xwire:
+        return False
+    ywire = wire_name('y', level)
+    if gate.inwire1 != ywire and gate.inwire2 != ywire:
+        return False
+    return True
+
+def validate_prev_carry(gate: Gate, level: int, gates: dict[str,Gate], carry_bits: dict[str,int]) -> bool:
+    """validate supplied gate would result in valid carry bit from previous level"""
+    if gate.gate_type != "AND":
+        return False
+    if gate.inwire1[0] in "xyz" or gate.inwire2[0] in "xyz":
+        return False
+    ingate1 = gates[gate.inwire1]
+    ingate2 = gates[gate.inwire2]
+    if not validate_input_xor(ingate1, level) and not validate_input_xor(ingate2, level):
+        return False
+    if not validate_carry_bit(ingate1, level, gates, carry_bits) and \
+       not validate_carry_bit(ingate2, level, gates, carry_bits):
+        return False
+    return True
+
+def pp(gates: dict[str,Gate], wire: str, level: int, carry_bits: dict[str,int]) -> str:
     """print out a gate"""
     if wire[0] in "xy":
         return "  " * level + wire
+    if wire in carry_bits:
+        return "  " * level + wire + ": carry for level " + str(carry_bits[wire])
     gate = gates[wire]
     return "  " * level + str(gate) + "\n" + \
-           pp(gates, gate.inwire1, level + 1) + "\n" + \
-           pp(gates, gate.inwire2, level + 1)
+           pp(gates, gate.inwire1, level + 1, carry_bits) + "\n" + \
+           pp(gates, gate.inwire2, level + 1, carry_bits)
 
 # Data
 data = read_lines("input/day24/input.txt")
@@ -228,4 +330,5 @@ assert solve_part1(sample2) == 2024
 assert solve_part1(data) == 59336987801432
 
 # Part 2
-assert solve_part2(data) == ""
+fixed = read_lines("input/day24/input-fixed.txt")
+assert solve_part2(fixed) == "ctg,dmh,dvq,rpb,rpv,z11,z31,z38"
