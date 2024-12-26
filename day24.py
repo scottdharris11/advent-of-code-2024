@@ -16,10 +16,10 @@ def solve_part2(lines: list[str]) -> str:
     """part 2 solving function"""
     # After thinking about this for a while and having no clue
     # how to proceed since the combination of wires to switch
-    # was way too emmense, i consulted hyperneutrino video on the
+    # was way too big, i consulted hyperneutrino video on the
     # day which led me to not verifying the output, but verifying
     # the formula construction.  Since we are attempting to "add"
-    # two values, the forumulas should be inline with binary addition
+    # two values, the formulas should be inline with binary addition
     # principles.  the tricky piece is dealing with the carry bits.
     # This will be my adaption of his solution with hopefully my
     # understanding of the approach and rationale. Check out his
@@ -54,7 +54,7 @@ def solve_part2(lines: list[str]) -> str:
     for gate in parse_gates(lines[sidx:]):
         gates[gate.outwire] = gate
 
-    # manually discovered updates...
+    # manually discovered updates...automate later
     # z11(245) <-> rpv(207)
     # ctg(255) <-> rpb(281)
     # z31(115) <-> dmh(189)
@@ -151,13 +151,6 @@ def value_from_bits(wires: dict[str,int], prefix: chr) -> tuple[int,int]:
 def wire_name(prefix: chr, number: int) -> str:
     """convert prefix and wire number into wire name"""
     return prefix + str(number).zfill(2)
-
-def find_gate(gates: list[Gate], outwire: str) -> Gate:
-    """find the gate with the given outwire"""
-    for gate in gates:
-        if gate.outwire == outwire:
-            return gate
-    return None
 
 def validate_z_output(gate: Gate, gates: dict[str,Gate], level: int, carry_bits: dict[str,int]) -> bool:
     """validate the z output gate is correct"""
