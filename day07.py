@@ -1,5 +1,4 @@
 """utility imports"""
-from typing import Tuple
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -9,7 +8,7 @@ def solve_part1(lines: list[str]):
     valid = 0
     for line in lines:
         test, values = parse(line)
-        if equation_valid(0, test, values, ['+', '*'], []):
+        if equation_valid(0, test, values, 0, len(values), ['+', '*']):
             valid += test
     return valid
 
@@ -19,33 +18,33 @@ def solve_part2(lines: list[str]):
     valid = 0
     for line in lines:
         test, values = parse(line)
-        if equation_valid(0, test, values, ['+', '*', '|'], []):
+        if equation_valid(0, test, values, 0, len(values), ['+', '*', '|']):
             valid += test
     return valid
 
-def parse(line: str) -> Tuple[int, list[int]]:
+def parse(line: str) -> tuple[int, list[int]]:
     """parse input line"""
     idx = line.index(":")
     test = int(line[:idx])
     values = list(map(int, line[idx+1:].strip().split(" ")))
     return test, values
 
-def equation_valid(start: int, test: int, values: list[int], ops: list[chr], prev: list) -> bool:
+def equation_valid(start: int, test: int, vals: list[int], idx: int, end: int, ops: list[chr]) -> bool:
     """recursively compute until complete and validate against test"""
-    if len(values) == 0:
+    if idx == end or start > test:
         return start == test
-    val = values[0]
+    val = vals[idx]
     for op in ops:
         if op == '+':
-            if equation_valid(start + val, test, values[1:], ops, prev + [op, val]):
+            if equation_valid(start + val, test, vals, idx+1, end, ops):
                 return True
         elif op == '*' and start > 0:
-            if equation_valid(start * val, test, values[1:], ops, prev + [op, val]):
+            if equation_valid(start * val, test, vals, idx+1, end, ops):
                 return True
         elif op == '|':
             if start == 0:
                 continue
-            if equation_valid(int(str(start)+str(val)), test, values[1:], ops, prev + [op, val]):
+            if equation_valid(int(str(start)+str(val)), test, vals, idx+1, end, ops):
                 return True
     return False
 
