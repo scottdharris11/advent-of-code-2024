@@ -68,7 +68,7 @@ def check_x_mas(lines: list, loc: tuple) -> bool:
         return False
     height = len(lines)
     width = len(lines[0])
-    
+
     for offsets in x_mas_offsets:
         x1 = x + offsets[0][0]
         x2 = x + offsets[1][0]
