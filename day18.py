@@ -22,7 +22,7 @@ def solve_part2(coords: list[str], size: int, byte_count: int) -> str:
     s = Search(ps)
     solution = s.best(SearchMove(0, (0,0)))
     for cnt in range(byte_count+1,len(coords)):
-        # skip to next coordinate if the current additional memory 
+        # skip to next coordinate if the current additional memory
         # location was not in the last solution path
         c = parse_integers(coords[cnt-1],",")
         m = (c[0], c[1])
