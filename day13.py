@@ -44,7 +44,7 @@ class PrizeMachine:
         # a = (c*y2 - d*x2) / (x1*y2 - y1*x2)
         # b = (d*x1 - c*y1) / (x1*y2 - y1*x2)
         #
-        # youtube video by hyperneutrino helped me (https://www.youtube.com/watch?v=-5J-DAsWuJc) 
+        # youtube video by hyperneutrino helped me (https://www.youtube.com/watch?v=-5J-DAsWuJc)
         # understand, but here is my explantion:
         #
         # solving for a system of equations essentially:
