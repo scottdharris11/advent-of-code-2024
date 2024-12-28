@@ -50,7 +50,7 @@ class Region:
         return len(self.plots) * sides
 
     def perimeter(self, grid: list[str]) -> set[tuple[tuple[int,int],tuple[int,int]]]:
-        """detremine the permeter sides of the region"""
+        """detremine the perimeter sides of the region"""
         height = len(grid)
         width = len(grid[0])
         for plot in self.plots:
@@ -64,7 +64,7 @@ class Region:
         return self.fence_sides
 
     def __sides_in_direction__(self, direction: tuple[int,int]) -> dict[int,list[int]]:
-        """find the points that have permiter sides"""
+        """find the points that have perimeter sides"""
         edges = {}
         for fs in self.fence_sides:
             if fs[1] == direction:
