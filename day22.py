@@ -1,4 +1,5 @@
 """utility imports"""
+from collections import deque
 from utilities.data import read_lines
 from utilities.runner import runner
 
@@ -21,14 +22,14 @@ def solve_part2(lines: list[str]) -> int:
         sn = int(line)
         p = price(sn)
         bcs = set()
-        bc = []
+        bc = deque(maxlen=4)
         for i in range(2000):
             nsn = secret_number(sn)
             np = price(nsn)
             pc = np-p
             bc.append(pc)
             if i > 2:
-                seq = (bc[i-3], bc[i-2], bc[i-1], bc[i])
+                seq = tuple(bc)
                 if seq not in bcs:
                     bcs.add(seq)
                     change_seqs[seq] = change_seqs.get(seq,0) + np
